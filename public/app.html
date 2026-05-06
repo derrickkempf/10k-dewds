@@ -21,8 +21,8 @@
 <meta name="twitter:image" content="/10k-dewds-social-share.jpg">
 
 <!-- Favicon + App Icons -->
-<link rel="icon" href="/10k-dewd-icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/10k-dewd-icon.svg">
+<link rel="icon" href="/10k-dewd-ico.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/10k-dewd-ico.svg">
 
 <!-- Umami Cloud Analytics -->
 <script defer src="https://cloud.umami.is/script.js" data-website-id="67aace68-ca11-45f8-9a4b-90f0ead10133"></script>
@@ -519,8 +519,19 @@ nav.nav-hidden { transform: translateY(-100%); }
   width: 100%; height: 100%; object-fit: cover;
 }
 .drawing-empty {
+  text-align: center; padding: var(--space-xl) var(--space-md);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-md);
+}
+.drawing-empty-eyebrow {
   font-size: var(--font-size-xs); color: rgba(0,0,0,.35);
-  text-align: center; padding: var(--space-xl); font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: .04em;
+}
+.drawing-empty-q {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-black);
+  color: var(--color-fg); line-height: 1.1;
+  max-width: 320px;
 }
 
 /* mint + acquire section */
@@ -1452,6 +1463,154 @@ const MINT_ABI = [
   'function prepareArtifact(uint256 tokenId, bytes[] tokenArtifact, bool clear)',
 ];
 
+// ── "What might it be?" prompts shown for un-drawn DEWDs.
+// 137 variations; each DEWD id maps deterministically to one so the
+// prompt is stable per DEWD across reloads.
+const QUESTIONS = [
+  "What might it be?",
+  "What will they look like?",
+  "Can you guess what's coming?",
+  "What do you think it could be?",
+  "Any predictions?",
+  "What's your guess?",
+  "What could it possibly be?",
+  "Got any ideas?",
+  "What do you imagine?",
+  "What's in store?",
+  "What will be drawn next?",
+  "What's on the way?",
+  "What could appear next?",
+  "What might show up?",
+  "What are you hoping to see?",
+  "What could surprise you?",
+  "What's your expectation?",
+  "What might emerge?",
+  "What will come to light?",
+  "What's the mystery?",
+  "What should it be?",
+  "What could it become?",
+  "What are the possibilities?",
+  "What might unfold?",
+  "What's likely coming?",
+  "What would you love to see?",
+  "What strikes your curiosity?",
+  "What intrigues you?",
+  "What captivates your interest?",
+  "What excites you?",
+  "What's your hunch?",
+  "What's your instinct telling you?",
+  "What does your gut say?",
+  "What's your best guess?",
+  "What comes to mind?",
+  "What first occurred to you?",
+  "What popped into your head?",
+  "What crossed your mind?",
+  "What's on your mind?",
+  "What are you thinking?",
+  "What will take shape?",
+  "What will materialize?",
+  "What will manifest?",
+  "What will come into being?",
+  "What will be created?",
+  "What will be brought to life?",
+  "What will evolve?",
+  "What will develop?",
+  "What will grow?",
+  "What will transform?",
+  "Wonder what it'll be?",
+  "Curious about what's next?",
+  "Wondering what might appear?",
+  "Thinking about possibilities?",
+  "Speculating on what's coming?",
+  "Imagining what could be?",
+  "Dreaming about what might show?",
+  "Daydreaming about what's ahead?",
+  "What's your wildest guess?",
+  "What's your deepest wish?",
+  "What awaits?",
+  "What's in the works?",
+  "What's being prepared?",
+  "What's on the horizon?",
+  "What's looming?",
+  "What's approaching?",
+  "What's drawing near?",
+  "What's coming around the corner?",
+  "What's just around the bend?",
+  "What's yet to come?",
+  "What's the big reveal?",
+  "What's the big surprise?",
+  "What's hiding?",
+  "What's being kept from you?",
+  "What's the secret?",
+  "What's yet unknown?",
+  "What remains unseen?",
+  "What's still a mystery?",
+  "What's still hidden?",
+  "What's waiting to be discovered?",
+  "What will captivate you?",
+  "What will amaze you?",
+  "What will astonish you?",
+  "What will impress you?",
+  "What will delight you?",
+  "What will inspire you?",
+  "What will move you?",
+  "What will touch your heart?",
+  "What will strike you?",
+  "What will resonate with you?",
+  "Dare to imagine?",
+  "Ready to be surprised?",
+  "Prepared for the unexpected?",
+  "Open to possibilities?",
+  "Ready to see something new?",
+  "Braced for what's coming?",
+  "Eager to find out?",
+  "Desperate to know?",
+  "Dying to see?",
+  "Can't wait to witness?",
+  "What form will it take?",
+  "What shape will it have?",
+  "What appearance will it have?",
+  "What configuration awaits?",
+  "What composition is coming?",
+  "What combination might appear?",
+  "What arrangement is on the way?",
+  "What layout could it be?",
+  "What structure will emerge?",
+  "What design is brewing?",
+  "What story will it tell?",
+  "What narrative will unfold?",
+  "What tale awaits?",
+  "What message will it carry?",
+  "What meaning will it hold?",
+  "What will it express?",
+  "What will it convey?",
+  "What will it communicate?",
+  "What will it reveal?",
+  "What will it showcase?",
+  "The big unknown?",
+  "The next big thing?",
+  "Something different?",
+  "Something unexpected?",
+  "Something extraordinary?",
+  "Something remarkable?",
+  "Something noteworthy?",
+  "Something memorable?",
+  "Something special?",
+  "Something amazing?",
+  "What's brewing?",
+  "What's cooking?",
+  "What's coming up?",
+  "What's next?",
+  "What's happening?",
+  "What's emerging?",
+  "What's unfolding?"
+];
+function pickQuestion(id) {
+  // Deterministic per-DEWD pick: same id always returns same prompt.
+  const n = ((Number(id) % QUESTIONS.length) + QUESTIONS.length) % QUESTIONS.length;
+  return QUESTIONS[n];
+}
+
 // ── Global state ──
 let punks    = [];
 let filtered = [];
@@ -1897,7 +2056,10 @@ function renderMBody(id) {
 
   const drawHTML = p.art
     ? `<div class="drawing-area"><img src="${p.art}" alt="drawing"><div class="halftone-overlay"><img src="/halftone-pattern.svg" alt=""></div></div>`
-    : `<div class="drawing-area"><div class="drawing-empty">drawing not yet uploaded</div></div>`;
+    : `<div class="drawing-area"><div class="drawing-empty">
+        <div class="drawing-empty-eyebrow">drawing not yet uploaded</div>
+        <div class="drawing-empty-q">${esc(pickQuestion(id))}</div>
+      </div></div>`;
 
   const admHTML = adminOn ? `
     <div>
@@ -1956,16 +2118,7 @@ function renderMBody(id) {
   const traitsContainerId = `traits-${id}`;
 
   document.getElementById('modal-body').innerHTML = `
-    <div class="punk-row">
-      <div class="punk-thumb">
-        <img class="ref" src="${IMG(id)}" alt="DEWD #${id}" onerror="this.style.opacity='.15'">
-      </div>
-      <div class="punk-info">
-        <div class="punk-num">#${String(id).padStart(4,'0')}</div>
-        <div class="trait-pills" id="${traitsContainerId}"><span class="status-badge ${sc}" style="font-size:9px">${st}</span></div>
-        ${ipfsRow}
-      </div>
-    </div>
+    ${ipfsRow ? `<div>${ipfsRow}</div>` : ''}
     ${drawHTML}
     ${acquireHTML}
     ${admHTML}
@@ -1982,9 +2135,6 @@ function renderMBody(id) {
       ${commentFormHTML}
     </div>
     `;
-
-  // Load trait pills for all punks
-  loadTraitPills(id, traitsContainerId);
 }
 
 let _traitsLoaded = false;

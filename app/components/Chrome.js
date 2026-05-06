@@ -147,9 +147,8 @@ export default function Chrome() {
             in the moment. This app tracks progress from DEWD #0000 to DEWD #9999.
           </p>
           <p>
-            Click any DEWD to see the original reference and the hand-drawn version
-            (if complete). Vote for your favorites and leave a suggestion under any
-            DEWD for how you&apos;d like to see it drawn.
+            Click any DEWD to see the drawing larger. Vote for your favorites and
+            share a comment on what you like.
           </p>
           <p>Drawing on what makes us human. One day at a time.</p>
           <button className="btn-primary" onClick={() => setAboutOpen(false)}>Close</button>
