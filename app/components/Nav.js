@@ -9,7 +9,6 @@ export default function Nav({ statsCount = 0, onToggleStats, onOpenAbout, hidden
   const pathname = usePathname() || ''
   const isDaily = pathname.startsWith('/daily')
   const isFeed  = pathname.startsWith('/feed')
-  const isDraw  = pathname.startsWith('/draw')
 
   return (
     <nav className={hidden ? 'nav-hidden' : ''}>
@@ -26,8 +25,8 @@ export default function Nav({ statsCount = 0, onToggleStats, onOpenAbout, hidden
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
         <a
-          className={`nav-pill nav-draw-btn${isDraw ? ' active' : ''}`}
-          href="/draw"
+          className="nav-pill nav-draw-btn"
+          href="/app.html?draw=1"
           title="Draw"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}

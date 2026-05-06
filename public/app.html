@@ -503,7 +503,7 @@ nav.nav-hidden { transform: translateY(-100%); }
 
 /* drawing area */
 .drawing-area {
-  background: #f0f0f0; border: 2px solid var(--color-border);
+  background: #f0f0f0; border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   min-height: 140px; display: flex; align-items: center; justify-content: center; overflow: hidden;
   position: relative;
@@ -522,8 +522,8 @@ nav.nav-hidden { transform: translateY(-100%); }
   width: 100%; height: 100%; object-fit: cover;
 }
 .drawing-empty {
-  text-align: center; padding: var(--space-2xl) var(--space-md);
-  display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);
+  text-align: center; padding: var(--space-xl) var(--space-md);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-md);
 }
 .drawing-empty-eyebrow {
   font-size: var(--font-size-xs); color: rgba(0,0,0,.35);
@@ -946,6 +946,91 @@ body.daily-open .pag,
 body.daily-open .bottom-section,
 body.daily-open .site-footer { margin-right: 50vw; transition: margin-right .3s cubic-bezier(.4,0,.2,1); }
 
+/* ═══════════════════════════════════════════════════════
+   DRAW PANEL — full-screen flyout, lives below the nav
+   ═══════════════════════════════════════════════════════ */
+#draw-panel {
+  position: fixed;
+  top: var(--nav-height, 64px);
+  left: 0; right: 0; bottom: 0;
+  background: #fff;
+  z-index: 140;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s cubic-bezier(.4,0,.2,1);
+  /* Pen cursor with hotspot at the pen tip (lower-left of the SVG) */
+  cursor: url('/pen-cursor.svg') 1 18, crosshair;
+  touch-action: none;
+}
+#draw-panel.open { opacity: 1; pointer-events: all; }
+#draw-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  background: #fff;
+}
+.draw-close {
+  position: absolute; top: 12px; right: 16px; z-index: 2;
+  width: 36px; height: 36px;
+  font-size: 24px; font-weight: var(--font-weight-medium);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  transition: all .12s;
+}
+.draw-close:hover { color: var(--color-fg); border-color: var(--color-fg); }
+.draw-toolbar {
+  position: absolute;
+  left: 50%; bottom: 24px;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  z-index: 2;
+  cursor: default;
+}
+.draw-swatch {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid transparent;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color .12s;
+}
+.draw-swatch:hover { border-color: var(--color-border); }
+.draw-swatch.on { border-color: var(--color-fg); }
+.draw-swatch-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: block;
+}
+.draw-divider {
+  width: 1px; height: 24px;
+  background: var(--color-border);
+}
+.draw-clear {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-muted);
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: color .12s, background .12s;
+}
+.draw-clear:hover { color: var(--color-fg); background: var(--color-surface); }
+/* When the draw panel is open, lock background scroll */
+body.draw-open { overflow: hidden; }
+
 .dp-close {
   position: absolute; top: var(--space-md); right: var(--space-md);
   width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
@@ -1243,7 +1328,7 @@ body.daily-open .site-footer { margin-right: 50vw; transition: margin-right .3s 
     </div>
     <div class="nav-actions">
       <button class="nav-pill nav-counter nav-counter--desktop" onclick="toggleStats()"><span class="nav-dot"></span> <span id="nav-done-desktop">0</span>/10,000</button>
-      <a class="nav-pill nav-draw-btn" href="/draw" title="Draw"><img class="nav-draw-icon" src="/squiggle.svg" alt=""> Draw</a>
+      <button class="nav-pill nav-draw-btn" id="nav-draw-btn" onclick="toggleDraw()" title="Draw" type="button"><img class="nav-draw-icon" src="/squiggle.svg" alt=""> Draw</button>
       <button class="nav-pill nav-daily-btn" id="nav-daily-btn" onclick="toggleDaily()"><svg class="nav-daily-icon" viewBox="0 0 20.16 21.22" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.49,18.04h-4.24c-1.17,0-2.12-.95-2.12-2.12v-7.43h14.85v2.12c0,.59.47,1.06,1.06,1.06s1.06-.47,1.06-1.06v-4.24c0-2.34-1.9-4.24-4.24-4.24v-1.06c0-.59-.47-1.06-1.06-1.06s-1.06.47-1.06,1.06v1.06h-6.37v-1.06c0-.59-.47-1.06-1.06-1.06s-1.06.47-1.06,1.06v1.06C1.9,2.12,0,4.03,0,6.37v9.55c0,2.34,1.9,4.24,4.24,4.24h4.24c.59,0,1.06-.47,1.06-1.06s-.47-1.06-1.06-1.06ZM4.24,4.24h10.61c1.17,0,2.12.95,2.12,2.12H2.12c0-1.17.95-2.12,2.12-2.12Z"/><path d="M19.76,14.03c-.46-.37-1.12-.29-1.49.17l-3.5,4.38-1.28-1.28c-.41-.41-1.09-.41-1.5,0s-.41,1.09,0,1.5l2.12,2.12c.2.2.47.31.75.31.02,0,.04,0,.06,0,.3-.02.58-.16.77-.4l4.24-5.31c.37-.46.29-1.13-.17-1.49Z"/></svg> Daily</button>
       <button class="nav-about-btn" id="about-btn" onclick="openAbout()" title="About this project — long press for admin">?</button>
     </div>
@@ -1299,6 +1384,18 @@ body.daily-open .site-footer { margin-right: 50vw; transition: margin-right .3s 
 
     <!-- Posts -->
     <div id="dp-posts" class="dp-posts"></div>
+  </div>
+</div>
+
+<!-- DRAW PANEL (full-screen flyout for sketching) -->
+<div id="draw-panel" aria-hidden="true">
+  <button class="draw-close" onclick="toggleDraw()" aria-label="Close Draw">×</button>
+  <canvas id="draw-canvas"></canvas>
+  <div class="draw-toolbar">
+    <button type="button" class="draw-swatch on" data-color="black" onclick="drawSetColor('black', this)" aria-label="Black ink" title="Black"><span class="draw-swatch-dot" style="background:#111"></span></button>
+    <button type="button" class="draw-swatch" data-color="blue" onclick="drawSetColor('blue', this)" aria-label="Blue ink" title="Blue"><span class="draw-swatch-dot" style="background:#0099ff"></span></button>
+    <span class="draw-divider"></span>
+    <button type="button" class="draw-clear" onclick="drawClear()">Clear</button>
   </div>
 </div>
 
@@ -2784,7 +2881,8 @@ function toast(m, ok=false) {
 // ═══════════════════════════════════════════════════════
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (dpOpen) { toggleDaily(); return; }
+    if (drawOpen) { toggleDraw(); return; }
+    if (dpOpen)   { toggleDaily(); return; }
     closeM(); closeEmailAuth(); closeAdminAuth(); closeAbout();
   }
   if (e.key === 'Enter' && document.getElementById('admin-auth-overlay').classList.contains('open')) chkAdminAuth();
@@ -2849,6 +2947,157 @@ function toggleDaily() {
     document.getElementById('dp-new-post').style.display = adminOn ? '' : 'none';
   }
 }
+
+// ═══════════════════════════════════════════════════════
+// DRAW PANEL — overlay sketchpad
+// ═══════════════════════════════════════════════════════
+let drawOpen      = false;
+let drawCtx       = null;
+let drawIsDown    = false;
+let drawColor     = '#111';
+let drawLast      = null;
+let drawStrokes   = [];     // [{ color, points: [{x,y}] }] — for resize redraws
+let drawCurrent   = null;
+const DRAW_COLORS = { black: '#111', blue: '#0099ff' };
+const DRAW_WIDTH  = 3;
+
+function toggleDraw() {
+  drawOpen = !drawOpen;
+  const panel = document.getElementById('draw-panel');
+  panel.classList.toggle('open', drawOpen);
+  panel.setAttribute('aria-hidden', drawOpen ? 'false' : 'true');
+  document.body.classList.toggle('draw-open', drawOpen);
+  document.getElementById('nav-draw-btn').classList.toggle('active', drawOpen);
+  if (drawOpen) drawSetupCanvas();
+}
+
+function drawSetupCanvas() {
+  const c = document.getElementById('draw-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.parentElement.getBoundingClientRect();
+  c.width  = Math.floor(rect.width  * dpr);
+  c.height = Math.floor(rect.height * dpr);
+  c.style.width  = rect.width  + 'px';
+  c.style.height = rect.height + 'px';
+  const ctx = c.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr, dpr);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = DRAW_WIDTH;
+  drawCtx = ctx;
+  drawRedrawAll();
+}
+
+function drawRedrawAll() {
+  if (!drawCtx) return;
+  drawCtx.clearRect(0, 0, drawCtx.canvas.width, drawCtx.canvas.height);
+  for (const s of drawStrokes) drawRenderStroke(s);
+}
+
+function drawRenderStroke(stroke) {
+  const ctx = drawCtx;
+  if (!ctx || !stroke.points.length) return;
+  ctx.strokeStyle = stroke.color;
+  const pts = stroke.points;
+  if (pts.length === 1) {
+    ctx.fillStyle = stroke.color;
+    ctx.beginPath();
+    ctx.arc(pts[0].x, pts[0].y, DRAW_WIDTH/2, 0, Math.PI*2);
+    ctx.fill();
+    return;
+  }
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const mx = (pts[i].x + pts[i+1].x) / 2;
+    const my = (pts[i].y + pts[i+1].y) / 2;
+    ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+  }
+  const last = pts[pts.length - 1];
+  ctx.lineTo(last.x, last.y);
+  ctx.stroke();
+}
+
+function drawPointFromEvt(e) {
+  const c = document.getElementById('draw-canvas');
+  const r = c.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function drawDown(e) {
+  if (!drawOpen) return;
+  // Don't start a stroke if the user is clicking the toolbar / close button
+  if (e.target.closest('.draw-toolbar') || e.target.closest('.draw-close')) return;
+  e.preventDefault();
+  const c = document.getElementById('draw-canvas');
+  c.setPointerCapture && c.setPointerCapture(e.pointerId);
+  drawIsDown = true;
+  const p = drawPointFromEvt(e);
+  drawLast = p;
+  drawCurrent = { color: drawColor, points: [p] };
+  drawStrokes.push(drawCurrent);
+}
+
+function drawMove(e) {
+  if (!drawIsDown) return;
+  e.preventDefault();
+  const p = drawPointFromEvt(e);
+  drawCurrent.points.push(p);
+  // Incremental quad-curve render so the in-flight stroke matches the
+  // post-redraw look.
+  const ctx = drawCtx;
+  if (!ctx) return;
+  ctx.strokeStyle = drawCurrent.color;
+  const last = drawLast;
+  const mx = (last.x + p.x) / 2;
+  const my = (last.y + p.y) / 2;
+  ctx.beginPath();
+  ctx.moveTo(last.x, last.y);
+  ctx.quadraticCurveTo(last.x, last.y, mx, my);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(mx, my);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+  drawLast = p;
+}
+
+function drawUp(e) {
+  if (!drawIsDown) return;
+  drawIsDown = false;
+  drawCurrent = null;
+  drawLast = null;
+}
+
+function drawSetColor(name, btn) {
+  drawColor = DRAW_COLORS[name] || DRAW_COLORS.black;
+  document.querySelectorAll('.draw-swatch').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+}
+
+function drawClear() {
+  drawStrokes = [];
+  drawRedrawAll();
+}
+
+// Wire pointer events on the panel itself so the canvas captures everything,
+// and resize keeps the canvas in sync.
+window.addEventListener('DOMContentLoaded', () => {
+  const panel = document.getElementById('draw-panel');
+  if (!panel) return;
+  panel.addEventListener('pointerdown', drawDown);
+  panel.addEventListener('pointermove', drawMove);
+  panel.addEventListener('pointerup',   drawUp);
+  panel.addEventListener('pointercancel', drawUp);
+  panel.addEventListener('pointerleave',  drawUp);
+  window.addEventListener('resize', () => { if (drawOpen) drawSetupCanvas(); });
+  // Allow deep-linking from the Next.js routes: /app.html?draw=1 auto-opens.
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('draw') === '1') toggleDraw();
+  } catch {}
+});
 
 async function dpLoadDay() {
   const isToday  = dpDate === dpTodayISO();
