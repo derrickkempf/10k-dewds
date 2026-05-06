@@ -7,7 +7,7 @@ export const metadata = {
   description: '10,000 hand drawn DEWDs in 100 days by Derrick Kempf.',
   icons: {
     icon: '/10k-dewd-ico.svg',
-    apple: '/10k-dewd-ico.svg',
+    apple: '/apple-touch-icon.png',
   },
 }
 
