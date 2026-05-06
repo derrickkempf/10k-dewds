@@ -505,11 +505,15 @@ nav.nav-hidden { transform: translateY(-100%); }
 .drawing-area {
   background: #f0f0f0; border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
-  min-height: 140px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
   position: relative;
 }
+/* Hide aspect-ratio on the empty state — let the prompt size itself */
+.drawing-area:has(.drawing-empty) { aspect-ratio: auto; min-height: 240px; }
 .drawing-area > img {
-  max-width: 100%; object-fit: contain;
+  width: 100%; height: 100%;
+  object-fit: cover;
   position: relative; z-index: 1;
 }
 .drawing-area .halftone-overlay {
@@ -925,6 +929,8 @@ textarea.input { resize: vertical; min-height: 60px; }
   background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg);
 }
 .nav-draw-icon { width: 14px; height: 14px; flex-shrink: 0; display: block; }
+/* Active button has a black background — flip the dark squiggle to white */
+.nav-draw-btn.active .nav-draw-icon { filter: invert(1); }
 .nav-daily-icon { width: 14px; height: 14px; flex-shrink: 0; }
 
 /* ═══════════════════════════════════════════════════════
@@ -973,12 +979,12 @@ body.daily-open .site-footer { margin-right: 50vw; transition: margin-right .3s 
   width: 36px; height: 36px;
   font-size: 24px; font-weight: var(--font-weight-medium);
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border);
   border-radius: 50%;
   color: var(--color-muted);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  line-height: 1;
+  line-height: normal;
   transition: all .12s;
 }
 .draw-close:hover { color: var(--color-fg); border-color: var(--color-fg); }
@@ -989,7 +995,7 @@ body.daily-open .site-footer { margin-right: 50vw; transition: margin-right .3s 
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px;
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border);
   border-radius: var(--radius-pill);
   box-shadow: 0 4px 16px rgba(0,0,0,.08);
   z-index: 2;
@@ -1013,11 +1019,11 @@ body.daily-open .site-footer { margin-right: 50vw; transition: margin-right .3s 
   display: block;
 }
 .draw-divider {
-  width: 1px; height: 24px;
+  width: 2px; height: 24px;
   background: var(--color-border);
 }
 .draw-clear {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-medium);
   color: var(--color-muted);
   background: transparent;
@@ -1028,6 +1034,102 @@ body.daily-open .site-footer { margin-right: 50vw; transition: margin-right .3s 
   transition: color .12s, background .12s;
 }
 .draw-clear:hover { color: var(--color-fg); background: var(--color-surface); }
+
+/* Generic icon buttons in the draw toolbar (size, mode, clear, share) */
+.draw-icon-btn {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  transition: background .12s, opacity .12s;
+}
+.draw-icon-img { width: 18px; height: 18px; display: block; }
+.draw-icon-btn:hover { background: var(--color-surface); }
+/* Active state (e.g. eraser engaged) flips to dark with white icon */
+.draw-icon-btn.on { background: var(--color-fg); }
+.draw-icon-btn.on .draw-icon-img { filter: invert(1); }
+
+/* Pen vs Eraser icon — show one based on mode */
+.draw-mode-btn .draw-eraser-svg { display: none; }
+.draw-mode-btn.erasing .draw-pen-svg { display: none; }
+.draw-mode-btn.erasing .draw-eraser-svg { display: block; }
+.draw-mode-btn.erasing { background: var(--color-fg); }
+.draw-mode-btn.erasing .draw-icon-img { filter: invert(1); }
+
+/* Line width: cycle highlight by reducing opacity of unused bars via mask.
+   The SVG itself has 3 colored bars; we fade the whole icon when smaller
+   sizes are active so the user gets a visible hint of which size is on. */
+.draw-size-btn[data-size="small"]  .draw-icon-img { opacity: .55; }
+.draw-size-btn[data-size="medium"] .draw-icon-img { opacity: .8; }
+.draw-size-btn[data-size="large"]  .draw-icon-img { opacity: 1; }
+
+/* Share modal */
+#draw-share-backdrop {
+  position: fixed; inset: 0; z-index: 220;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-lg);
+  opacity: 0; pointer-events: none;
+  transition: opacity .18s;
+}
+#draw-share-backdrop.open { opacity: 1; pointer-events: all; }
+.draw-share-modal {
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh;
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0,0,0,.18);
+  cursor: default;
+}
+.draw-share-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 2px solid var(--color-border);
+}
+.draw-share-title {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: .03em;
+}
+.draw-share-close {
+  background: none; border: none; color: var(--color-muted);
+  font-size: 28px; cursor: pointer; padding: 0 4px; line-height: 1;
+  transition: color .12s;
+}
+.draw-share-close:hover { color: var(--color-fg); }
+.draw-share-preview {
+  padding: var(--space-lg);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-surface);
+}
+.draw-share-preview img {
+  max-width: 100%; max-height: 60vh;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-border);
+  display: block;
+}
+.draw-share-actions {
+  display: flex; gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  flex-wrap: wrap;
+}
+.draw-share-action { flex: 1; min-width: 100px; }
+.draw-share-hint {
+  padding: 0 var(--space-lg) var(--space-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+  text-align: center;
+  min-height: 16px;
+}
+
 /* When the draw panel is open, lock background scroll */
 body.draw-open { overflow: hidden; }
 
@@ -1219,6 +1321,10 @@ body.draw-open { overflow: hidden; }
   body.daily-open .pag,
   body.daily-open .bottom-section,
   body.daily-open .site-footer { margin-right: 0; }
+
+  /* Two-row nav on mobile is taller — push the draw panel down so the nav
+     stays visible above it. */
+  #draw-panel { top: 100px; }
 }
 @media (max-width: 720px) {
   .tagline { display: none; }
@@ -1394,8 +1500,39 @@ body.draw-open { overflow: hidden; }
   <div class="draw-toolbar">
     <button type="button" class="draw-swatch on" data-color="black" onclick="drawSetColor('black', this)" aria-label="Black ink" title="Black"><span class="draw-swatch-dot" style="background:#111"></span></button>
     <button type="button" class="draw-swatch" data-color="blue" onclick="drawSetColor('blue', this)" aria-label="Blue ink" title="Blue"><span class="draw-swatch-dot" style="background:#0099ff"></span></button>
+    <button type="button" class="draw-icon-btn draw-size-btn" id="draw-size-btn" onclick="drawCycleSize()" aria-label="Line width" title="Line width">
+      <img src="/line-width.svg" alt="" class="draw-icon-img">
+    </button>
     <span class="draw-divider"></span>
-    <button type="button" class="draw-clear" onclick="drawClear()">Clear</button>
+    <button type="button" class="draw-icon-btn draw-mode-btn" id="draw-mode-btn" onclick="drawToggleErase()" aria-label="Pen" title="Pen / Eraser">
+      <img src="/pen.svg"   alt="" class="draw-icon-img draw-pen-svg">
+      <img src="/erase.svg" alt="" class="draw-icon-img draw-eraser-svg">
+    </button>
+    <button type="button" class="draw-icon-btn draw-clear-btn" onclick="drawClear()" aria-label="Clear canvas" title="Clear">
+      <img src="/trash.svg" alt="" class="draw-icon-img">
+    </button>
+    <button type="button" class="draw-icon-btn draw-share-btn" onclick="drawShareOpen()" aria-label="Share drawing" title="Share">
+      <img src="/send.svg" alt="" class="draw-icon-img">
+    </button>
+  </div>
+</div>
+
+<!-- DRAW SHARE MODAL -->
+<div id="draw-share-backdrop" onclick="if(event.target===this)drawShareClose()" aria-hidden="true">
+  <div class="draw-share-modal">
+    <div class="draw-share-head">
+      <div class="draw-share-title">Share your DEWD</div>
+      <button class="draw-share-close" onclick="drawShareClose()" aria-label="Close">×</button>
+    </div>
+    <div class="draw-share-preview">
+      <img id="draw-share-img" alt="Preview" />
+    </div>
+    <div class="draw-share-actions">
+      <button class="btn-primary draw-share-action" id="draw-share-native" onclick="drawShareNative()" type="button">Share</button>
+      <button class="btn-secondary draw-share-action" onclick="drawShareDownload()" type="button">Download</button>
+      <button class="btn-secondary draw-share-action" onclick="drawShareCopyLink()" type="button" id="draw-share-copylink">Copy link</button>
+    </div>
+    <div class="draw-share-hint" id="draw-share-hint"></div>
   </div>
 </div>
 
@@ -2073,7 +2210,7 @@ function render() {
     const mkcls = mkCache[p.id] || '';
     const hasUpload = !!p.art;
     const imgInner = hasUpload
-      ? `<img class="ref" src="${IMG(p.id)}" loading="lazy" onerror="this.style.opacity='.15'"><img class="art" src="${p.art}" loading="lazy"><div class="card-halftone"><img src="/halftone-pattern.svg" alt=""></div>`
+      ? `<img class="art" src="${p.art}" loading="lazy"><div class="card-halftone"><img src="/halftone-pattern.svg" alt=""></div>`
       : '';
     const hc    = p.votedBy.includes(VID) ? 'on' : '';
     const ddAttrs = adminOn
@@ -2881,6 +3018,7 @@ function toast(m, ok=false) {
 // ═══════════════════════════════════════════════════════
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
+    if (document.getElementById('draw-share-backdrop')?.classList.contains('open')) { drawShareClose(); return; }
     if (drawOpen) { toggleDraw(); return; }
     if (dpOpen)   { toggleDaily(); return; }
     closeM(); closeEmailAuth(); closeAdminAuth(); closeAbout();
@@ -2956,10 +3094,15 @@ let drawCtx       = null;
 let drawIsDown    = false;
 let drawColor     = '#111';
 let drawLast      = null;
-let drawStrokes   = [];     // [{ color, points: [{x,y}] }] — for resize redraws
+let drawStrokes   = [];     // [{color, points, width, mode}] — replayed on resize
 let drawCurrent   = null;
+let drawErasing   = false;
+let drawSizeIdx   = 1;      // 0=small, 1=medium, 2=large
 const DRAW_COLORS = { black: '#111', blue: '#0099ff' };
-const DRAW_WIDTH  = 3;
+const DRAW_WIDTHS = [2, 4, 8];        // pen sizes
+const DRAW_ERASE_WIDTHS = [12, 22, 36]; // eraser is bigger than pen at same idx
+const DRAW_SIZE_NAMES = ['small','medium','large'];
+const DRAW_SHARE_URL = 'https://10k.dewd.cool/app.html?utm_source=drawing%20share';
 
 function toggleDraw() {
   drawOpen = !drawOpen;
@@ -2968,7 +3111,14 @@ function toggleDraw() {
   panel.setAttribute('aria-hidden', drawOpen ? 'false' : 'true');
   document.body.classList.toggle('draw-open', drawOpen);
   document.getElementById('nav-draw-btn').classList.toggle('active', drawOpen);
-  if (drawOpen) drawSetupCanvas();
+  if (drawOpen) {
+    drawSetupCanvas();
+    drawSyncSizeUI();
+  }
+}
+
+function drawCurrentWidth() {
+  return drawErasing ? DRAW_ERASE_WIDTHS[drawSizeIdx] : DRAW_WIDTHS[drawSizeIdx];
 }
 
 function drawSetupCanvas() {
@@ -2984,27 +3134,33 @@ function drawSetupCanvas() {
   ctx.scale(dpr, dpr);
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.lineWidth = DRAW_WIDTH;
   drawCtx = ctx;
   drawRedrawAll();
 }
 
 function drawRedrawAll() {
   if (!drawCtx) return;
+  drawCtx.save();
+  drawCtx.setTransform(1,0,0,1,0,0);
   drawCtx.clearRect(0, 0, drawCtx.canvas.width, drawCtx.canvas.height);
+  drawCtx.restore();
   for (const s of drawStrokes) drawRenderStroke(s);
 }
 
 function drawRenderStroke(stroke) {
   const ctx = drawCtx;
   if (!ctx || !stroke.points.length) return;
+  ctx.save();
+  ctx.globalCompositeOperation = stroke.mode === 'erase' ? 'destination-out' : 'source-over';
   ctx.strokeStyle = stroke.color;
+  ctx.lineWidth = stroke.width || 3;
   const pts = stroke.points;
   if (pts.length === 1) {
     ctx.fillStyle = stroke.color;
     ctx.beginPath();
-    ctx.arc(pts[0].x, pts[0].y, DRAW_WIDTH/2, 0, Math.PI*2);
+    ctx.arc(pts[0].x, pts[0].y, ctx.lineWidth / 2, 0, Math.PI*2);
     ctx.fill();
+    ctx.restore();
     return;
   }
   ctx.beginPath();
@@ -3017,6 +3173,7 @@ function drawRenderStroke(stroke) {
   const last = pts[pts.length - 1];
   ctx.lineTo(last.x, last.y);
   ctx.stroke();
+  ctx.restore();
 }
 
 function drawPointFromEvt(e) {
@@ -3035,8 +3192,15 @@ function drawDown(e) {
   drawIsDown = true;
   const p = drawPointFromEvt(e);
   drawLast = p;
-  drawCurrent = { color: drawColor, points: [p] };
+  drawCurrent = {
+    color: drawColor,
+    points: [p],
+    width: drawCurrentWidth(),
+    mode: drawErasing ? 'erase' : 'draw',
+  };
   drawStrokes.push(drawCurrent);
+  // Render the just-started dot immediately so a single tap leaves a mark
+  drawRenderStroke(drawCurrent);
 }
 
 function drawMove(e) {
@@ -3044,11 +3208,13 @@ function drawMove(e) {
   e.preventDefault();
   const p = drawPointFromEvt(e);
   drawCurrent.points.push(p);
-  // Incremental quad-curve render so the in-flight stroke matches the
-  // post-redraw look.
+  // Incremental quad-curve render that matches the post-redraw look
   const ctx = drawCtx;
   if (!ctx) return;
+  ctx.save();
+  ctx.globalCompositeOperation = drawCurrent.mode === 'erase' ? 'destination-out' : 'source-over';
   ctx.strokeStyle = drawCurrent.color;
+  ctx.lineWidth = drawCurrent.width;
   const last = drawLast;
   const mx = (last.x + p.x) / 2;
   const my = (last.y + p.y) / 2;
@@ -3060,6 +3226,7 @@ function drawMove(e) {
   ctx.moveTo(mx, my);
   ctx.lineTo(p.x, p.y);
   ctx.stroke();
+  ctx.restore();
   drawLast = p;
 }
 
@@ -3074,11 +3241,195 @@ function drawSetColor(name, btn) {
   drawColor = DRAW_COLORS[name] || DRAW_COLORS.black;
   document.querySelectorAll('.draw-swatch').forEach(b => b.classList.remove('on'));
   if (btn) btn.classList.add('on');
+  // Picking a color implies pen mode (you can't "color" while erasing)
+  if (drawErasing) drawToggleErase();
+}
+
+function drawCycleSize() {
+  drawSizeIdx = (drawSizeIdx + 1) % DRAW_WIDTHS.length;
+  drawSyncSizeUI();
+}
+
+function drawSyncSizeUI() {
+  const btn = document.getElementById('draw-size-btn');
+  if (btn) btn.setAttribute('data-size', DRAW_SIZE_NAMES[drawSizeIdx]);
+}
+
+function drawToggleErase() {
+  drawErasing = !drawErasing;
+  const btn = document.getElementById('draw-mode-btn');
+  if (btn) {
+    btn.classList.toggle('erasing', drawErasing);
+    btn.setAttribute('aria-label', drawErasing ? 'Eraser (click for pen)' : 'Pen (click for eraser)');
+  }
 }
 
 function drawClear() {
   drawStrokes = [];
   drawRedrawAll();
+}
+
+// ── Share: composite canvas + DEWD badge into a 1080×1080 PNG ─────────
+let _drawShareBlob = null;
+let _drawShareDataURL = null;
+let _dewdIconImg = null;
+
+function _drawLoadDewdIcon() {
+  if (_dewdIconImg) return Promise.resolve(_dewdIconImg);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { _dewdIconImg = img; resolve(img); };
+    img.onerror = () => resolve(null); // proceed without icon if it fails
+    img.src = '/10k-dewd-ico.svg';
+  });
+}
+
+function _drawRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+async function _drawComposite() {
+  const SIZE = 1080;
+  const src = document.getElementById('draw-canvas');
+  const out = document.createElement('canvas');
+  out.width = SIZE; out.height = SIZE;
+  const ctx = out.getContext('2d');
+
+  // White background
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  // Center-fit the canvas content (preserve aspect, no crop)
+  const sw = src.width, sh = src.height;
+  if (sw && sh) {
+    const scale = Math.min(SIZE / sw, SIZE / sh);
+    const dw = sw * scale, dh = sh * scale;
+    ctx.drawImage(src, (SIZE - dw) / 2, (SIZE - dh) / 2, dw, dh);
+  }
+
+  // Build the badge: pill bubble with the DEWD icon and the message
+  const icon = await _drawLoadDewdIcon();
+  const fontSize = 30;
+  const padX = 22;
+  const padY = 14;
+  const iconSize = 40;
+  const gap = 12;
+  const text = ', look what I drew!';
+  const brand = 'DEWD';
+
+  ctx.font = `700 ${fontSize}px Ohno Softie, -apple-system, BlinkMacSystemFont, sans-serif`;
+  ctx.textBaseline = 'middle';
+  const brandW = ctx.measureText(brand).width;
+  const textW  = ctx.measureText(text).width;
+  const contentW = iconSize + gap + brandW + textW;
+  const badgeW = contentW + padX * 2;
+  const badgeH = Math.max(iconSize, fontSize) + padY * 2;
+  const bx = (SIZE - badgeW) / 2;
+  const by = SIZE - badgeH - 60;
+
+  // Pill background
+  ctx.fillStyle = '#fff';
+  ctx.strokeStyle = '#111';
+  ctx.lineWidth = 4;
+  _drawRoundRect(ctx, bx, by, badgeW, badgeH, badgeH / 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Icon
+  if (icon) {
+    ctx.drawImage(icon, bx + padX, by + (badgeH - iconSize) / 2, iconSize, iconSize);
+  }
+
+  // Text — brand bold black, then the rest
+  let tx = bx + padX + iconSize + gap;
+  const ty = by + badgeH / 2 + 1;
+  ctx.fillStyle = '#111';
+  ctx.fillText(brand, tx, ty);
+  tx += brandW;
+  ctx.fillText(text, tx, ty);
+
+  return out;
+}
+
+async function drawShareOpen() {
+  // Generate the preview asynchronously (icon load + canvas composite)
+  const preview = document.getElementById('draw-share-img');
+  const hint = document.getElementById('draw-share-hint');
+  hint.textContent = '';
+  preview.removeAttribute('src');
+  document.getElementById('draw-share-backdrop').classList.add('open');
+
+  const out = await _drawComposite();
+  _drawShareDataURL = out.toDataURL('image/png');
+  preview.src = _drawShareDataURL;
+  _drawShareBlob = await new Promise(r => out.toBlob(r, 'image/png'));
+
+  // Hide native share button if not supported with files
+  const nativeBtn = document.getElementById('draw-share-native');
+  const file = _drawShareBlob ? new File([_drawShareBlob], 'dewd-drawing.png', { type: 'image/png' }) : null;
+  const canShareFile = !!(navigator.share && navigator.canShare && file && navigator.canShare({ files: [file] }));
+  nativeBtn.style.display = canShareFile ? '' : 'none';
+}
+
+function drawShareClose() {
+  document.getElementById('draw-share-backdrop').classList.remove('open');
+}
+
+async function drawShareNative() {
+  if (!_drawShareBlob) return;
+  const file = new File([_drawShareBlob], 'dewd-drawing.png', { type: 'image/png' });
+  try {
+    await navigator.share({
+      files: [file],
+      text: 'Look what I drew on DEWDS!',
+      url: DRAW_SHARE_URL,
+    });
+    drawShareClose();
+  } catch (err) {
+    if (err && err.name !== 'AbortError') {
+      const hint = document.getElementById('draw-share-hint');
+      hint.textContent = 'Share canceled or failed.';
+    }
+  }
+}
+
+function drawShareDownload() {
+  if (!_drawShareDataURL) return;
+  const a = document.createElement('a');
+  a.href = _drawShareDataURL;
+  a.download = 'dewd-drawing.png';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  document.getElementById('draw-share-hint').textContent = 'Saved to your downloads.';
+}
+
+async function drawShareCopyLink() {
+  const hint = document.getElementById('draw-share-hint');
+  try {
+    await navigator.clipboard.writeText(DRAW_SHARE_URL);
+    hint.textContent = 'Link copied — paste anywhere.';
+  } catch {
+    // Fallback: select-and-copy via temp textarea
+    const ta = document.createElement('textarea');
+    ta.value = DRAW_SHARE_URL;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); hint.textContent = 'Link copied.'; }
+    catch { hint.textContent = 'Could not copy automatically — long-press the link to copy.'; }
+    ta.remove();
+  }
 }
 
 // Wire pointer events on the panel itself so the canvas captures everything,
@@ -3092,6 +3443,7 @@ window.addEventListener('DOMContentLoaded', () => {
   panel.addEventListener('pointercancel', drawUp);
   panel.addEventListener('pointerleave',  drawUp);
   window.addEventListener('resize', () => { if (drawOpen) drawSetupCanvas(); });
+  drawSyncSizeUI();
   // Allow deep-linking from the Next.js routes: /app.html?draw=1 auto-opens.
   try {
     const params = new URLSearchParams(window.location.search);
