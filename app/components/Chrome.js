@@ -132,11 +132,11 @@ export default function Chrome() {
       >
         <div className="about-box">
           <div style={{ marginBottom: 'var(--space-lg)' }}>
-            <dotlottie-wc
-              src="/punk-dewds-logo.lottie"
-              style={{ width: '154px', height: '35px' }}
-              autoplay="true"
-              loop="true"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/10k-dewds-logo.svg"
+              alt="10K DEWDS"
+              style={{ height: '35px', width: 'auto', display: 'block' }}
             />
           </div>
           <p>

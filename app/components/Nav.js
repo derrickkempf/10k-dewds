@@ -14,11 +14,11 @@ export default function Nav({ statsCount = 0, onToggleStats, onOpenAbout, hidden
     <nav className={hidden ? 'nav-hidden' : ''}>
       <div className="nav-left">
         <a className="logo" href="/app.html" aria-label="DEWDs">
-          <dotlottie-wc
-            src="/punk-dewds-logo.lottie"
-            style={{ width: '154px', height: '35px' }}
-            autoplay="true"
-            loop="true"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/10k-dewds-logo.svg"
+            alt="10K DEWDS"
+            style={{ height: '35px', width: 'auto', display: 'block' }}
           />
         </a>
         <span className="tagline">10,000 hand drawn DEWDs in 100 days.</span>
