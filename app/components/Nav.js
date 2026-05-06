@@ -9,6 +9,7 @@ export default function Nav({ statsCount = 0, onToggleStats, onOpenAbout, hidden
   const pathname = usePathname() || ''
   const isDaily = pathname.startsWith('/daily')
   const isFeed  = pathname.startsWith('/feed')
+  const isDraw  = pathname.startsWith('/draw')
 
   return (
     <nav className={hidden ? 'nav-hidden' : ''}>
@@ -24,6 +25,15 @@ export default function Nav({ statsCount = 0, onToggleStats, onOpenAbout, hidden
         <span className="tagline">10,000 hand drawn DEWDs in 100 days.</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+        <a
+          className={`nav-pill nav-draw-btn${isDraw ? ' active' : ''}`}
+          href="/draw"
+          title="Draw"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/squiggle.svg" alt="" className="nav-draw-icon" />
+          Draw
+        </a>
         <a
           className={`nav-pill${isDaily ? ' active' : ''}`}
           href="/daily"

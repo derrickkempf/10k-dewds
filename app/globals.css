@@ -105,6 +105,17 @@ nav.nav-hidden { transform: translateY(-100%); }
   color: var(--color-bg);
   border-color: var(--color-fg);
 }
+.nav-draw-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav-draw-icon {
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+  display: block;
+}
+.nav-draw-btn.active .nav-draw-icon { filter: invert(1); }
 .nav-about-btn {
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
