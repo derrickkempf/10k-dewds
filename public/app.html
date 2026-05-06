@@ -500,7 +500,7 @@ nav.nav-hidden { transform: translateY(-100%); }
 
 /* drawing area */
 .drawing-area {
-  background: #f0f0f0; border: 2px solid var(--color-border);
+  background: #f0f0f0; border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   min-height: 140px; display: flex; align-items: center; justify-content: center; overflow: hidden;
   position: relative;
@@ -519,8 +519,8 @@ nav.nav-hidden { transform: translateY(-100%); }
   width: 100%; height: 100%; object-fit: cover;
 }
 .drawing-empty {
-  text-align: center; padding: var(--space-2xl) var(--space-md);
-  display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);
+  text-align: center; padding: var(--space-xl) var(--space-md);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-md);
 }
 .drawing-empty-eyebrow {
   font-size: var(--font-size-xs); color: rgba(0,0,0,.35);
@@ -2668,9 +2668,18 @@ async function sha256(s) {
   return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2,'0')).join('');
 }
 
-function adminClick() {
+async function adminClick() {
   if (adminOn) { exitAdmin(); return; }
-  if (sessionStorage.getItem('pd-ok') === '1') { unlockAdmin(); return; }
+  if (sessionStorage.getItem('pd-ok') === '1') {
+    // Verify the server cookie is still valid before trusting the local flag —
+    // otherwise the UI thinks you're admin while every API write 401s.
+    try {
+      const r = await fetch('/api/admin/session', { cache: 'no-store', credentials: 'include' });
+      const j = await r.json();
+      if (j.isAdmin) { unlockAdmin(); return; }
+    } catch {}
+    sessionStorage.removeItem('pd-ok');
+  }
   document.getElementById('admin-auth-overlay').classList.add('open');
   setTimeout(() => document.getElementById('admin-pw').focus(), 200);
 }
@@ -2678,28 +2687,54 @@ function adminClick() {
 async function chkAdminAuth() {
   const pw = document.getElementById('admin-pw').value;
   const h  = await sha256(pw);
-  if (h === HASH) {
-    sessionStorage.setItem('pd-ok', '1');
-    // Create the server-side admin cookie — MUST succeed for daily/feed to work.
-    try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pw }),
-      });
-      if (!res.ok) console.warn('Admin cookie not set:', res.status);
-    } catch (err) {
-      console.warn('Admin cookie request failed:', err);
-    }
-    document.getElementById('admin-auth-overlay').classList.remove('open');
-    document.getElementById('admin-pw').value = '';
-    document.getElementById('admin-auth-error').style.display = 'none';
-    unlockAdmin();
-  } else {
-    document.getElementById('admin-auth-error').style.display = 'block';
+  const errEl = document.getElementById('admin-auth-error');
+  if (h !== HASH) {
+    errEl.textContent = 'Incorrect password.';
+    errEl.style.display = 'block';
     document.getElementById('admin-pw').select();
+    return;
   }
+  // Client-side hash matches. Now require the server to accept the same
+  // password and set the pd-admin cookie — without it, /api/daily and
+  // /api/feed will 401 every write. If this fails, surface why instead of
+  // silently unlocking the UI.
+  let res;
+  try {
+    res = await fetch('/api/admin/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+  } catch (err) {
+    errEl.textContent = 'Network error contacting /api/admin/login.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!res.ok) {
+    errEl.textContent = `Server rejected password (${res.status}). Check ADMIN_HASH / SESSION_SECRET env vars.`;
+    errEl.style.display = 'block';
+    return;
+  }
+  // Round-trip check: confirm the cookie actually came back and verifies.
+  try {
+    const sess = await fetch('/api/admin/session', { cache: 'no-store', credentials: 'include' });
+    const j = await sess.json().catch(() => ({}));
+    if (!j.isAdmin) {
+      errEl.textContent = 'Cookie not accepted by browser. On localhost? sameSite=none requires HTTPS.';
+      errEl.style.display = 'block';
+      return;
+    }
+  } catch {
+    errEl.textContent = 'Could not verify admin session after login.';
+    errEl.style.display = 'block';
+    return;
+  }
+  sessionStorage.setItem('pd-ok', '1');
+  document.getElementById('admin-auth-overlay').classList.remove('open');
+  document.getElementById('admin-pw').value = '';
+  errEl.style.display = 'none';
+  unlockAdmin();
 }
 function closeAdminAuth() {
   document.getElementById('admin-auth-overlay').classList.remove('open');
