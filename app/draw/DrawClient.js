@@ -27,17 +27,21 @@ export default function DrawClient() {
 
   // Set up the canvas once mounted; redraw all saved strokes on resize so the
   // existing artwork survives device rotations / window resizes.
+  // Size from the parent's bounding rect so the canvas matches whatever space
+  // is left below the nav, not the full viewport.
   const setupCanvas = useCallback(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || !canvas.parentElement) return
+    const rect = canvas.parentElement.getBoundingClientRect()
     const dpr = window.devicePixelRatio || 1
-    const w = window.innerWidth
-    const h = window.innerHeight
+    const w = rect.width
+    const h = rect.height
     canvas.width = Math.floor(w * dpr)
     canvas.height = Math.floor(h * dpr)
     canvas.style.width = w + 'px'
     canvas.style.height = h + 'px'
     const ctx = canvas.getContext('2d')
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.scale(dpr, dpr)
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
@@ -82,7 +86,13 @@ export default function DrawClient() {
     setupCanvas()
     const onResize = () => setupCanvas()
     window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+    // Tag the body so the scoped global CSS (footer hide etc.) only applies
+    // on /draw, not on every other route in the app.
+    document.body.classList.add('draw-page')
+    return () => {
+      window.removeEventListener('resize', onResize)
+      document.body.classList.remove('draw-page')
+    }
   }, [setupCanvas])
 
   const pointFromEvent = (e) => {
@@ -183,18 +193,21 @@ export default function DrawClient() {
         </button>
       </div>
 
-      {/* Scoped styles — keeps /draw isolated from the rest of the site. */}
+      {/* Scoped styles — /draw keeps the nav, hides the page's normal scroll
+          and footer so the canvas can claim everything below the nav. */}
       <style jsx global>{`
-        body { background: #fff; overflow: hidden; }
-        /* Hide the global site nav/footer on /draw — full-bleed canvas */
-        body > nav,
-        body > #stats-bar,
-        body > .nav-progress,
-        body > .site-footer,
-        body > footer { display: none !important; }
-        body > main { padding: 0 !important; margin: 0 !important; }
+        html, body { background: #fff; }
+        body.draw-page { overflow: hidden; }
+        /* Hide site footer + the bottom support sticker on /draw so the
+           canvas owns the space below the nav. Nav stays visible. */
+        body.draw-page > .site-footer,
+        body.draw-page > footer,
+        body.draw-page .bottom-section { display: none !important; }
         .draw-root {
-          position: fixed; inset: 0;
+          /* Sit below the sticky nav (--nav-height defaults to 64px). */
+          position: fixed;
+          top: var(--nav-height, 64px);
+          left: 0; right: 0; bottom: 0;
           background: #fff;
           /* Pen-cursor with hotspot at the pen tip (lower-left of the SVG) */
           cursor: url('/pen-cursor.svg') 1 18, crosshair;
