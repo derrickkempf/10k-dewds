@@ -1,10 +1,12 @@
 // ═══════════════════════════════════════════════════════
-// CORS middleware — allows punk.dewd.cool ↔ Vercel API
-// calls to pass cookies through the Cloudflare proxy.
+// CORS middleware — allows the public-facing domains ↔
+// Vercel API calls to pass cookies through the Cloudflare proxy.
 // ═══════════════════════════════════════════════════════
 import { NextResponse } from 'next/server'
 
 const ALLOWED_ORIGINS = [
+  'https://10k.dewd.cool',
+  'https://www.10k.dewd.cool',
   'https://punk.dewd.cool',
   'https://www.punk.dewd.cool',
 ]
