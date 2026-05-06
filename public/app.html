@@ -1,0 +1,3078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEWDS</title>
+<meta name="description" content="10,000 hand drawn DEWDs in 100 days by Derrick Kempf.">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="DEWDS">
+<meta property="og:description" content="10,000 hand drawn DEWDs in 100 days.">
+<meta property="og:image" content="/og.png">
+<meta property="og:url" content="https://punk.dewd.cool">
+<meta property="og:site_name" content="DEWDS">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DEWDS">
+<meta name="twitter:description" content="10,000 hand drawn DEWDs in 100 days.">
+<meta name="twitter:image" content="/og.png">
+
+<!-- Favicon + App Icons -->
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<!-- Umami Cloud Analytics -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="67aace68-ca11-45f8-9a4b-90f0ead10133"></script>
+
+<script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.10/dist/dotlottie-wc.js" type="module"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.11.1/ethers.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES — single source of truth
+   ═══════════════════════════════════════════════════════ */
+@font-face {
+  font-family: 'Ohno Softie';
+  src: url('OhnoSoftieVariable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --color-bg: #fff;
+  --color-fg: #111;
+  --color-muted: #999;
+  --color-border: #e5e5e5;
+  --color-surface: #fafafa;
+  --color-accent: #0099ff;
+  --color-accent-bg: rgba(0,153,255,.06);
+  --color-wip: #b08a00;
+  --color-wip-bg: rgba(176,138,0,.06);
+  --color-error: #c0392b;
+
+  --font-family: 'Ohno Softie', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Ohno Softie', monospace;
+
+  --font-size-xs: 0.6875rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+  --font-weight-black: 700;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+
+  --nav-height: 64px;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-pill: 999px;
+}
+
+/* Ohno Softie Variable loaded via @font-face above */
+
+/* ═══════════════════════════════════════════════════════
+   RESET
+   ═══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--color-bg); color: var(--color-fg); font-family: var(--font-family); font-size: 16px; -webkit-font-smoothing: antialiased; line-height: 1.5; }
+body { min-height: 100vh; display: flex; flex-direction: column; }
+a { color: inherit; text-decoration: none; }
+button { font-family: var(--font-family); cursor: pointer; border: none; background: none; }
+input, select, textarea { font-family: var(--font-family); }
+::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ═══════════════════════════════════════════════════════
+   NAV — minimal, type-driven
+   ═══════════════════════════════════════════════════════ */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: #fafafa;
+  display: flex; flex-direction: column;
+  padding: 0 var(--space-lg);
+  transition: transform .25s ease;
+}
+nav.nav-hidden { transform: translateY(-100%); }
+.nav-top-row {
+  display: none; /* shown only on mobile */
+  width: calc(100% + var(--space-lg) * 2);
+  margin-left: calc(-1 * var(--space-lg));
+  justify-content: center;
+  padding: 0;
+}
+.nav-top-row .nav-counter {
+  width: 100%;
+  font-size: 11px;
+  padding: 10px 28px;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 0;
+  text-align: right;
+}
+.nav-main-row {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; height: var(--nav-height);
+}
+.nav-actions {
+  display: flex; align-items: center; gap: 4px;
+}
+.nav-counter--desktop { border: none; }
+.nav-progress {
+  position: fixed; top: 0; left: 0; z-index: 999;
+  height: 3px;
+  background: var(--color-accent);
+  transition: width .8s cubic-bezier(.16,1,.3,1);
+}
+.nav-left {
+  display: flex; align-items: center; gap: 10px;
+}
+.logo {
+  display: flex; align-items: center; line-height: 0;
+}
+.tagline {
+  font-size: 14px;
+  color: var(--color-muted);
+  font-weight: var(--font-weight-medium);
+}
+.nav-pill {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .12s;
+}
+.nav-pill:hover { #000000; }
+.nav-pill b { font-weight: var(--font-weight-bold); }
+
+/* ? icon button */
+.nav-about-btn {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--color-border); border-radius: 50%;
+  font-size: 14px; font-weight: var(--font-weight-bold);
+  color: var(--color-muted); cursor: pointer; transition: all .12s;
+  background: var(--color-bg);
+}
+.nav-about-btn:hover { color: var(--color-fg); border-color: var(--color-fg); }
+
+/* ═══════════════════════════════════════════════════════
+   STATS BAR — dark theme
+   ═══════════════════════════════════════════════════════ */
+#stats-bar {
+  max-height: 0; overflow: hidden;
+  background: var(--color-fg);
+  transition: max-height .35s cubic-bezier(.4,0,.2,1);
+}
+#stats-bar.open { max-height: 300px; }
+.stats {
+  display: flex; overflow-x: auto;
+}
+.stat {
+  flex: 1; min-width: 80px;
+  padding: var(--space-md) var(--space-lg);
+  border-right: 1px solid rgba(255,255,255,.1);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.stat:last-child { border-right: none; }
+.stat-lbl {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: rgba(255,255,255,.45);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.stat-val {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  color: #fff;
+  line-height: 1.2;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CONTROLS — search + filter (dark, inside stats bar)
+   ═══════════════════════════════════════════════════════ */
+.controls {
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.search-wrap { position: relative; flex: 1; }
+.search-wrap input {
+  width: 100%; background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12); color: #fff;
+  font-size: var(--font-size-sm); padding: 6px 12px 6px 28px;
+  border-radius: var(--radius-pill);
+  outline: none; transition: border-color .15s;
+}
+.search-wrap input:focus { border-color: rgba(255,255,255,.4); }
+.search-wrap input::placeholder { color: rgba(255,255,255,.35); }
+.search-ic {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  color: rgba(255,255,255,.35); font-size: var(--font-size-sm); pointer-events: none;
+}
+.filter-toggle {
+  flex-shrink: 0; width: 32px; height: 32px;
+  border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.45);
+  border-radius: var(--radius-pill);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--font-size-sm); transition: all .12s;
+}
+.filter-toggle:hover { border-color: rgba(255,255,255,.4); color: #fff; }
+.filter-toggle.active { background: #fff; color: var(--color-fg); border-color: #fff; }
+
+/* filter drawer */
+.filter-drawer {
+  display: none; padding: var(--space-sm) var(--space-lg);
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  gap: var(--space-sm); align-items: center;
+}
+.filter-drawer.open { display: flex; flex-wrap: wrap; }
+.filters { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+.fb {
+  font-size: var(--font-size-xs); font-weight: var(--font-weight-medium);
+  background: transparent; border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.45); padding: 4px 12px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: all .12s;
+}
+.fb.on { background: #fff; color: var(--color-fg); border-color: #fff; }
+.sort-select {
+  font-size: var(--font-size-xs); font-weight: var(--font-weight-medium);
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+  color: #fff; padding: 4px 8px; border-radius: var(--radius-pill);
+  outline: none; cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════
+   GRID
+   ═══════════════════════════════════════════════════════ */
+.grid-wrap {
+  padding: var(--space-md) var(--space-lg) var(--space-xl);
+  flex: 1; background: var(--color-surface);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CARD — no border-radius, no shadow, flat
+   ═══════════════════════════════════════════════════════ */
+.card {
+  background: #e5e5e5; border-radius: var(--radius-md);
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: opacity .15s; display: flex; flex-direction: column;
+}
+.card:hover { opacity: .88; }
+.card.done { outline: none; outline-offset: none; }
+.card.wip { outline: 1px solid var(--color-border); outline-offset: -1px; }
+
+.card-img {
+  width: 100%; aspect-ratio: 1;
+  background: #e5e5e5;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+}
+.card-img img.ref {
+  width: 100%; height: 100%; object-fit: contain;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  transition: opacity .2s;
+}
+.card-img img.art {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; opacity: 1; transition: opacity .2s;
+  background: #f0f0f0; z-index: 2;
+}
+.card-img .card-halftone {
+  position: absolute; inset: 0; z-index: 1;
+  pointer-events: none; mix-blend-mode: multiply; opacity: .15;
+}
+.card-img .card-halftone img { width: 100%; height: 100%; object-fit: cover; }
+.card:hover .card-halftone { opacity: 0; }
+.card:hover .art { opacity: 0; }
+.card-img:has(.art) img.ref { opacity: 0; }
+.card:hover .card-img img.ref { opacity: 1; }
+.card.mk-blue { --punk-bg: #638596; }
+.card.mk-red { --punk-bg: #95554f; }
+.card.mk-purple { --punk-bg: #8e6fb6; }
+
+/* overlay on hover */
+.card-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: var(--space-sm);
+  background: linear-gradient(to top, rgba(0,0,0,.45) 0%, transparent 50%);
+  opacity: 0; transition: opacity .15s; pointer-events: none; z-index: 2;
+}
+.card:hover .card-overlay { opacity: 1; }
+.card-id {
+  font-size: var(--font-size-xs); font-weight: var(--font-weight-medium);
+  color: #fff; pointer-events: none; font-family: var(--font-mono); letter-spacing: .04em;
+}
+.overlay-actions { display: flex; align-items: center; gap: 6px; }
+.hrt {
+  font-size: var(--font-size-xs); color: rgba(255,255,255,.7);
+  pointer-events: all; cursor: pointer; user-select: none; transition: color .1s;
+}
+.hrt:hover, .hrt.on { color: #fff; }
+/* admin drop target */
+.card.admin-drop-target { outline: 2px solid var(--color-wip) !important; }
+.card.admin-drop-target .card-img::after {
+  content: 'DROP'; position: absolute; inset: 0;
+  background: rgba(176,138,0,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--font-size-xs); font-weight: var(--font-weight-medium);
+  color: #fff; pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PAGINATION
+   ═══════════════════════════════════════════════════════ */
+.pag {
+  display: flex; align-items: center; justify-content: center;
+  gap: 2px; padding: var(--space-lg); border-top: 1px solid var(--color-border);
+}
+.pg {
+  font-size: 16px; font-weight: var(--font-weight-medium);
+  background: var(--color-bg); border: 2px solid var(--color-border);
+  color: var(--color-muted); padding: 8px 16px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: all .12s; min-width: 30px; text-align: center;
+}
+.pg:hover { color: var(--color-fg); border-color: var(--color-fg); }
+.pg.on { background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg); }
+.pg:disabled { opacity: .3; pointer-events: none; }
+.ps { color: var(--color-muted); font-size: var(--font-size-sm); padding: 0 2px; }
+
+/* review + explainer */
+.bottom-section {
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-lg);
+  display: flex; flex-direction: column; gap: var(--space-xl);
+  width: 80%; align-items: center;
+}
+.support-link {
+  display: inline-block;
+  transform: rotate(-2deg);
+  transition: transform .3s cubic-bezier(.25,.46,.45,.94);
+}
+.support-link:hover {
+  transform: rotate(0deg) scale(1.05);
+}
+.support-link img { width: 280px; height: auto; display: block; }
+.explainer {
+  text-align: center; max-width: 420px; margin: 0 auto;
+}
+.explainer h3 {
+  font-size: var(--font-size-lg); font-weight: var(--font-weight-black);
+  color: var(--color-fg); margin-bottom: var(--space-md);
+}
+.explainer p {
+  font-size: 16px; color: var(--color-muted); line-height: 1.6;
+  margin-bottom: var(--space-sm);
+}
+
+/* footer */
+.site-footer {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-lg) calc(var(--space-2xl) + 16px);
+  border-top: 1px solid var(--color-border);
+}
+.footer-links {
+  display: flex; align-items: center; gap: var(--space-lg);
+}
+.footer-links a {
+  font-size: var(--font-size-base); font-weight: var(--font-weight-medium);
+  color: var(--color-muted); transition: color .12s;
+}
+.footer-links a:hover { color: var(--color-fg); }
+.footer-copy {
+  font-size: var(--font-size-sm); color: var(--color-muted);
+  font-weight: var(--font-weight-regular);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODAL — flat, no shadow, no border-radius
+   ═══════════════════════════════════════════════════════ */
+.backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-lg); opacity: 0; pointer-events: none; transition: opacity .18s;
+}
+.backdrop.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  border-radius: 24px;
+  width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto;
+  display: flex; flex-direction: column;
+  transform: translateY(8px); transition: transform .18s;
+  box-shadow: 0 16px 48px rgba(0,0,0,.12);
+}
+.backdrop.open .modal { transform: none; }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 2px solid var(--color-border);
+  position: sticky; top: 0; background: var(--color-bg); z-index: 10;
+  border-radius: 24px 24px 0 0;
+}
+.modal-title {
+  font-family: var(--font-mono);
+  font-size: 16px; font-weight: var(--font-weight-bold);
+  letter-spacing: .03em;
+}
+.modal-nav { display: flex; gap: 2px; }
+.mnb {
+  font-size: 16px; font-weight: var(--font-weight-medium);
+  background: var(--color-bg); border: 2px solid var(--color-border);
+  color: var(--color-muted); padding: 6px 16px; border-radius: var(--radius-pill);
+  transition: all .12s;
+}
+.mnb:hover { color: var(--color-fg); border-color: var(--color-fg); }
+.modal-close {
+  background: none; border: none; color: var(--color-muted);
+  font-size: 32px; cursor: pointer; padding: 0 4px; line-height: 1; margin-left: 6px;
+  transition: color .12s;
+}
+.modal-close:hover { color: var(--color-fg); }
+.modal-body {
+  padding: var(--space-lg); display: flex; flex-direction: column; gap: var(--space-lg);
+}
+
+/* modal punk info */
+.punk-row { display: flex; gap: var(--space-md); }
+.punk-thumb {
+  width: 88px; height: 88px; flex-shrink: 0;
+  background: #638596; border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.punk-thumb img { width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; object-fit: contain; }
+.punk-info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.punk-num {
+  font-family: var(--font-mono);
+  font-size: 28px; font-weight: var(--font-weight-bold);
+  line-height: 1; letter-spacing: .02em;
+}
+.status-badge {
+  font-size: 9px; font-weight: var(--font-weight-bold);
+  padding: 2px 8px; display: inline-block; letter-spacing: .04em;
+  text-transform: uppercase; border: 1px solid; border-radius: var(--radius-pill);
+}
+.status-badge.done { color: var(--color-accent); border-color: var(--color-accent); background: var(--color-accent-bg); }
+.status-badge.wip { color: var(--color-wip); border-color: var(--color-wip); background: var(--color-wip-bg); }
+.status-badge.ns { color: var(--color-muted); border-color: var(--color-border); }
+.status-badge.mk-blue { color: #638596; border-color: #638596; }
+.status-badge.mk-red { color: #95554f; border-color: #95554f; }
+.status-badge.mk-purple { color: #8e6fb6; border-color: #8e6fb6; }
+.trait-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+.trait-pill {
+  font-size: 11px; font-weight: var(--font-weight-medium);
+  padding: 3px 10px; border-radius: var(--radius-pill);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  color: var(--color-fg); letter-spacing: .02em;
+}
+.trait-pill.type { color: var(--color-accent); border-color: var(--color-accent); background: var(--color-accent-bg); font-weight: var(--font-weight-bold); }
+.ipfs-link {
+  font-size: 9px; color: var(--color-muted); word-break: break-all;
+  font-weight: var(--font-weight-medium);
+}
+.ipfs-link:hover { color: var(--color-fg); }
+
+/* drawing area */
+.drawing-area {
+  background: #f0f0f0; border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  min-height: 140px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  position: relative;
+}
+.drawing-area > img {
+  max-width: 100%; object-fit: contain;
+  position: relative; z-index: 1;
+}
+.drawing-area .halftone-overlay {
+  position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 1;
+}
+.drawing-area .halftone-overlay img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.drawing-empty {
+  font-size: var(--font-size-xs); color: rgba(0,0,0,.35);
+  text-align: center; padding: var(--space-xl); font-weight: var(--font-weight-medium);
+}
+
+/* mint + acquire section */
+.acquire-section { display: flex; flex-direction: column; gap: var(--space-sm); }
+.acquire-section .section-label { margin-bottom: 0; }
+.mint-btn {
+  width: 100%; font-size: 16px; font-weight: var(--font-weight-bold);
+  background: var(--color-fg); color: var(--color-bg); border: none;
+  padding: 16px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: opacity .12s; letter-spacing: .02em;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.mint-btn:hover { opacity: .8; }
+.mint-btn:disabled { opacity: .4; cursor: not-allowed; }
+.mint-btn.minted { background: var(--color-accent); }
+.mint-status {
+  font-size: var(--font-size-xs); color: var(--color-muted); text-align: center;
+}
+.mint-status.waiting { color: var(--color-wip); }
+.mint-status.minted { color: var(--color-accent); }
+.wallet-addr {
+  font-size: 9px; color: var(--color-muted); text-align: center;
+  font-family: var(--font-mono); letter-spacing: .02em;
+}
+
+/* voting */
+.section-label {
+  font-size: 14px; font-weight: var(--font-weight-bold);
+  color: var(--color-muted); letter-spacing: .08em;
+  text-transform: uppercase; margin-bottom: var(--space-sm);
+}
+.vote-row { display: flex; align-items: center; gap: var(--space-md); }
+.vote-btn {
+  font-size: 18px; font-weight: var(--font-weight-medium);
+  background: var(--color-bg); border: none;
+  color: var(--color-muted); padding: 4px 8px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: all .12s;
+}
+.vote-btn:hover, .vote-btn.on { color: var(--color-accent); border-color: var(--color-accent); background: var(--color-accent-bg); }
+.vote-count { font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); color: var(--color-fg); }
+
+/* comments */
+.comments { display: flex; flex-direction: column; gap: var(--space-sm); }
+.comment {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); padding: 10px 12px;
+}
+.comment-name { font-size: 11px; font-weight: var(--font-weight-bold); color: var(--color-accent); letter-spacing: .02em; }
+.comment-text { font-size: var(--font-size-base); color: var(--color-fg); margin-top: 3px; line-height: 1.5; }
+.comment-time { font-size: 9px; color: var(--color-muted); margin-top: 3px; }
+
+/* inputs — flat, no radius */
+.input {
+  width: 100%; background: var(--color-bg);
+  border: 2px solid var(--color-border); color: var(--color-fg);
+  font-size: var(--font-size-sm); padding: 10px 14px;
+  border-radius: var(--radius-md);
+  outline: none; transition: border-color .15s;
+}
+.input:focus { border-color: var(--color-fg); }
+.input::placeholder { color: var(--color-muted); }
+textarea.input { resize: vertical; min-height: 60px; }
+.btn-primary {
+  font-size: var(--font-size-md); font-weight: var(--font-weight-bold);
+  background: var(--color-fg); color: var(--color-bg); border: none;
+  padding: 8px 18px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: opacity .12s;
+}
+.btn-primary:hover { opacity: .8; }
+.btn-secondary {
+  font-size: var(--font-size-md); font-weight: var(--font-weight-medium);
+  background: var(--color-bg); border: 2px solid var(--color-border);
+  color: var(--color-muted); padding: 6px 14px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: all .12s;
+}
+.btn-secondary:hover { color: var(--color-fg); border-color: var(--color-fg); }
+
+/* ═══════════════════════════════════════════════════════
+   AUTH OVERLAY — email-first, zero password (VV style)
+   ═══════════════════════════════════════════════════════ */
+#auth-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(255,255,255,.55);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .18s;
+}
+#auth-overlay.open { opacity: 1; pointer-events: all; }
+.auth-box {
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: var(--space-xl) var(--space-xl);
+  width: 360px; display: flex; flex-direction: column; gap: var(--space-lg);
+  box-shadow: 0 16px 48px rgba(0,0,0,.1);
+}
+.auth-title {
+  font-size: 26px; font-weight: var(--font-weight-black);
+  color: var(--color-fg); line-height: 1.2;
+}
+.auth-sub {
+  font-size: 16px; color: var(--color-muted); line-height: 1.25;
+}
+.auth-input {
+  width: 100%; background: var(--color-bg);
+  border: 1px solid var(--color-border); color: var(--color-fg);
+  font-size: var(--font-size-base); padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  outline: none; transition: border-color .15s;
+  margin: 16px 0;
+}
+.auth-input:focus { border-color: var(--color-fg); }
+.auth-input::placeholder { color: var(--color-muted); }
+.auth-error {
+  font-size: var(--font-size-xs); color: var(--color-error);
+  font-weight: var(--font-weight-medium); display: none;
+}
+.auth-actions { display: flex; gap: var(--space-sm); }
+.auth-submit {
+  font-size: 16px; font-weight: var(--font-weight-bold);
+  background: var(--color-fg); color: var(--color-bg);
+  border: none; padding: 14px 28px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: opacity .12s;
+}
+.auth-submit:hover { opacity: .8; }
+.auth-cancel {
+  font-size: var(--font-size-sm); font-weight: var(--font-weight-medium);
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  color: var(--color-muted); padding: 10px 16px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: all .12s;
+}
+.auth-cancel:hover { color: var(--color-fg); border-color: var(--color-fg); }
+/* code input group */
+.code-inputs {
+  display: flex; gap: 10px; justify-content: center;
+  padding: var(--space-lg) 0;
+}
+.code-digit {
+  width: 46px; height: 54px; text-align: center;
+  font-family: var(--font-mono); font-size: var(--font-size-xl);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-fg); outline: none; transition: border-color .15s;
+}
+.code-digit:focus { border-color: var(--color-fg); background: var(--color-bg); }
+
+/* about modal */
+#about-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(255,255,255,.55);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-lg); opacity: 0; pointer-events: none; transition: opacity .18s;
+}
+#about-backdrop.open { opacity: 1; pointer-events: all; }
+.about-box {
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  border-radius: 20px;
+  width: 100%; max-width: 480px; padding: var(--space-xl);
+  box-shadow: 0 16px 48px rgba(0,0,0,.1);
+}
+.about-box h2 {
+  font-family: var(--font-mono); font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-black); letter-spacing: .04em;
+  margin-bottom: var(--space-md);
+}
+.about-box p {
+  font-size: 16px; color: var(--color-muted);
+  line-height: 1.4; margin-bottom: var(--space-md);
+}
+.about-box p:last-of-type { margin-bottom: var(--space-lg); }
+.about-box p strong { color: var(--color-fg); font-weight: var(--font-weight-bold); }
+
+/* ═══════════════════════════════════════════════════════
+   ADMIN AUTH OVERLAY
+   ═══════════════════════════════════════════════════════ */
+#admin-auth-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(255,255,255,.55);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .18s;
+}
+#admin-auth-overlay.open { opacity: 1; pointer-events: all; }
+
+/* ═══════════════════════════════════════════════════════
+   ADMIN PANEL
+   ═══════════════════════════════════════════════════════ */
+#admin-panel {
+  background: var(--color-surface);
+  padding: 0; max-height: 0; overflow: hidden;
+  transition: max-height .25s ease, padding .25s ease;
+}
+#admin-panel.open { max-height: 2000px; padding: var(--space-md) var(--space-lg); overflow-y: auto; }
+.admin-header {
+  font-size: 9px; font-weight: var(--font-weight-medium);
+  color: var(--color-muted); letter-spacing: .08em; text-transform: uppercase;
+  margin-bottom: var(--space-md);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.dropzone {
+  display: block; width: 100%;
+  border: 3px dashed var(--color-border); border-radius: 18px;
+  padding: var(--space-lg); text-align: center;
+  cursor: pointer; transition: all .15s; margin-bottom: var(--space-md);
+  font-size: var(--font-size-xs); color: var(--color-muted);
+}
+.dropzone.over { border-color: var(--color-fg); color: var(--color-fg); background: var(--color-surface); }
+.dropzone small { display: block; font-size: 9px; margin-top: 3px; color: var(--color-muted); }
+.admin-row { display: flex; gap: var(--space-sm); flex-wrap: wrap; align-items: flex-end; }
+.admin-field { display: flex; flex-direction: column; gap: 3px; }
+.admin-field label {
+  font-size: 9px; font-weight: var(--font-weight-medium);
+  color: var(--color-muted); letter-spacing: .06em; text-transform: uppercase;
+}
+.admin-field input, .admin-field select {
+  font-size: var(--font-size-sm); background: var(--color-bg);
+  border: 2px solid var(--color-border); color: var(--color-fg);
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  outline: none; transition: border-color .15s;
+}
+.admin-field input:focus, .admin-field select:focus { border-color: var(--color-fg); }
+#admin-preview { margin-top: var(--space-sm); display: none; align-items: center; gap: var(--space-sm); }
+#admin-preview img { height: 56px; border: 1px solid var(--color-border); }
+#admin-preview-info { font-size: var(--font-size-xs); color: var(--color-muted); }
+#admin-preview-name { color: var(--color-fg); display: block; font-weight: var(--font-weight-medium); }
+
+/* ═══════════════════════════════════════════════════════
+   GRID CROPPER — batch crop tool inside admin panel
+   ═══════════════════════════════════════════════════════ */
+.gc-section {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+}
+.gc-title {
+  font-size: 9px; font-weight: var(--font-weight-medium);
+  color: var(--color-muted); letter-spacing: .08em; text-transform: uppercase;
+  margin-bottom: var(--space-md);
+}
+.gc-controls {
+  display: flex; gap: var(--space-sm); flex-wrap: wrap; align-items: flex-end;
+  margin-bottom: var(--space-md);
+}
+.gc-dropzone {
+  display: block; width: 100%;
+  border: 3px dashed var(--color-border); border-radius: 18px;
+  padding: var(--space-lg); text-align: center;
+  cursor: pointer; transition: all .15s; margin-bottom: var(--space-md);
+  font-size: var(--font-size-xs); color: var(--color-muted);
+}
+.gc-dropzone.over { border-color: var(--color-fg); color: var(--color-fg); }
+.gc-dropzone small { display: block; font-size: 9px; margin-top: 3px; color: var(--color-muted); }
+.gc-preview-wrap {
+  position: relative; margin-bottom: var(--space-md);
+  max-width: 100%; overflow: hidden; border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+.gc-preview-wrap img { display: block; width: 100%; height: auto; }
+.gc-preview-wrap canvas { display: none; }
+.gc-grid-overlay {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+.gc-grid-overlay svg { width: 100%; height: 100%; }
+.gc-thumbs {
+  display: grid; grid-template-columns: repeat(8, 1fr);
+  gap: 2px; margin-bottom: var(--space-md);
+}
+.gc-thumb {
+  position: relative; border-radius: 4px; overflow: hidden;
+  border: 2px solid var(--color-border); cursor: pointer;
+  opacity: .5; transition: all .12s;
+}
+.gc-thumb.selected { border-color: var(--color-fg); opacity: 1; }
+.gc-thumb img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.gc-thumb-check {
+  position: absolute; top: 4px; right: 4px;
+  width: 18px; height: 18px; color: var(--color-muted);
+  pointer-events: none;
+}
+.gc-thumb.selected .gc-thumb-check { color: var(--color-fg); }
+.gc-thumb-label {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,.6); color: #fff;
+  font-size: 8px; text-align: center; padding: 1px 0;
+  font-weight: var(--font-weight-medium);
+}
+.gc-select-actions {
+  display: flex; gap: var(--space-sm); margin-bottom: var(--space-sm);
+}
+.gc-select-actions button {
+  font-size: 10px; font-weight: var(--font-weight-medium);
+  padding: 4px 10px; border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm); background: var(--color-bg);
+  color: var(--color-fg); cursor: pointer; transition: all .12s;
+}
+.gc-select-actions button:hover { border-color: var(--color-fg); }
+.gc-select-count {
+  font-size: 10px; color: var(--color-muted);
+  display: flex; align-items: center;
+}
+.gc-status {
+  font-size: var(--font-size-xs); color: var(--color-muted);
+  margin-bottom: var(--space-sm);
+}
+
+/* modal upload zone */
+.modal-dropzone {
+  display: block; width: 100%; border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md); text-align: center; cursor: pointer;
+  font-size: var(--font-size-xs); color: var(--color-muted); transition: all .15s;
+}
+.modal-dropzone:hover, .modal-dropzone.over { border-color: var(--color-fg); color: var(--color-fg); }
+.modal-dropzone small { display: block; font-size: 9px; margin-top: 3px; color: var(--color-muted); }
+
+/* radio group */
+.radio-group { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+.radio-opt { display: flex; align-items: center; cursor: pointer; }
+.radio-opt input[type=radio] { display: none; }
+.radio-lbl {
+  font-size: var(--font-size-xs); font-weight: var(--font-weight-medium);
+  padding: 5px 12px; background: var(--color-bg);
+  border: 1px solid var(--color-border); color: var(--color-muted);
+  border-radius: var(--radius-pill); cursor: pointer; transition: all .12s;
+}
+.radio-opt input:checked + .radio-lbl { background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg); }
+
+/* ═══════════════════════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(60px); z-index: 999;
+  background: var(--color-fg); padding: 8px 20px; border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm); font-weight: var(--font-weight-medium);
+  color: var(--color-bg); opacity: 0; transition: all .2s;
+  pointer-events: none; white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+#toast.ok { background: var(--color-accent); }
+
+.empty {
+  text-align: center; padding: var(--space-2xl) var(--space-lg);
+  font-size: var(--font-size-sm); color: var(--color-muted);
+}
+
+/* ═══════════════════════════════════════════════════════
+   EMAIL GATE — lock behind signup for comment/update
+   ═══════════════════════════════════════════════════════ */
+.gate-prompt {
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  padding: var(--space-md); text-align: center;
+}
+.gate-prompt p {
+  font-size: 16px; color: var(--color-muted);
+  margin-bottom: var(--space-md); line-height: 1.5;
+}
+.gate-signup-btn {
+  font-size: 16px; font-weight: var(--font-weight-bold);
+  background: var(--color-fg); color: var(--color-bg);
+  border: none; padding: 10px 32px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: opacity .12s; display: inline-block;
+}
+.gate-signup-btn:hover { opacity: .8; }
+
+/* ═══════════════════════════════════════════════════════
+   NAV — counter dot + daily button
+   ═══════════════════════════════════════════════════════ */
+.nav-dot {
+  display: inline-block; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--color-accent);
+  vertical-align: middle; margin-right: 2px;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .4; transform: scale(.7); }
+}
+.nav-counter { font-variant-numeric: tabular-nums; font-size: 12px; padding: 4px 8px; border: none;}
+.nav-daily-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.nav-daily-btn.active {
+  background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg);
+}
+.nav-daily-icon { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════════════
+   DAILY PANEL — slide-out right sidebar
+   ═══════════════════════════════════════════════════════ */
+#daily-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 150;
+  width: 50%; max-width: 50%;
+  background: var(--color-bg);
+  box-shadow: -8px 0 32px rgba(0,0,0,.06);
+  transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+#daily-panel.open { transform: translateX(0); }
+body.daily-open .grid-wrap,
+body.daily-open .pag,
+body.daily-open .bottom-section,
+body.daily-open .site-footer { margin-right: 50vw; transition: margin-right .3s cubic-bezier(.4,0,.2,1); }
+
+.dp-close {
+  position: absolute; top: var(--space-md); right: var(--space-md);
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  color: var(--color-muted); cursor: pointer;
+  border: none; background: none; transition: color .12s; z-index: 10;
+}
+.dp-close svg { width: 14px; height: 14px; }
+.dp-close:hover { color: var(--color-fg); }
+
+.dp-inner { padding: 80px 150px; }
+
+/* Day navigation */
+.dp-day-strip {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-md);
+  padding-bottom: var(--space-lg);
+}
+.dp-day-label { text-align: center; }
+.dp-eyebrow {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  margin-bottom: 4px;
+}
+.dp-date {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.01em;
+}
+.dp-arrow {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-muted);
+  background: none; border: none; cursor: pointer;
+  padding: 24px 16px 8px 16px;
+  transition: color .12s;
+}
+.dp-arrow:hover { color: var(--color-fg); }
+.dp-arrow:disabled { opacity: .3; cursor: default; }
+
+/* Tasks */
+.dp-tasks {
+  list-style: none;
+  border: 2px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.dp-task {
+  display: grid;
+  grid-template-columns: 32px 36px 1fr;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 2px solid var(--color-border);
+  transition: background .12s;
+}
+.dp-task:last-child { border-bottom: none; }
+.dp-task:hover { background: var(--color-surface); }
+.dp-task.done .dp-task-label { color: var(--color-muted); }
+.dp-task-num {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-muted);
+}
+.dp-check {
+  width: 28px; height: 28px;
+  background: none; font-size: 16px;
+  color: var(--color-muted);
+  transition: all .12s; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+}
+.dp-check svg { width: 24px; height: 24px; }
+.dp-check:hover { color: var(--color-fg); }
+.dp-check.on { color: var(--color-fg); }
+.dp-task-label {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg);
+}
+.dp-hint {
+  margin-top: var(--space-md);
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+}
+
+/* Feed section inside daily panel */
+.dp-feed-head {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+  padding-top: var(--space-xl);
+}
+.dp-feed-title-row { display: flex; align-items: center; gap: var(--space-sm); justify-content: center;}
+.dp-feed-icon { width: 20px; height: 20px; flex-shrink: 0; color: var(--color-fg); }
+.dp-feed-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+}
+.dp-feed-sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+.dp-new-post-btn {
+  font-size: var(--font-size-xs); font-weight: var(--font-weight-medium);
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  color: var(--color-fg); padding: 8px 14px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: all .12s; white-space: nowrap;
+}
+.dp-new-post-btn:hover { border-color: var(--color-fg); }
+
+.dp-posts {
+  display: flex; flex-direction: column; gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+.dp-post {
+  background: #ffffff; border-radius: 12px;
+  border: 2px solid #e5e5e5;
+  padding: var(--space-lg);
+}
+.dp-post-body {
+  font-size: 18px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg);
+  line-height: 1.2;
+  white-space: pre-wrap;
+}
+.dp-post-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+  margin-top: var(--space-sm);
+}
+.dp-post-media {
+  display: block; width: 100%; height: auto;
+  border-radius: var(--radius-md);
+  margin-top: var(--space-md);
+  background: var(--color-surface);
+}
+.dp-post-media.video-thumb {
+  position: relative; cursor: pointer;
+}
+.dp-empty {
+  text-align: center; padding: var(--space-lg);
+  font-size: var(--font-size-sm); color: var(--color-muted);
+}
+
+/* Composer (inline in panel) */
+.dp-composer { margin-top: var(--space-lg); display: none; flex-direction: column; gap: var(--space-sm); }
+.dp-composer.open { display: flex; }
+.dp-composer textarea {
+  width: 100%; min-height: 80px; resize: vertical;
+  font-family: var(--font-family); font-size: var(--font-size-sm);
+  padding: 10px 12px; border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); outline: none;
+  transition: border-color .15s;
+}
+.dp-composer textarea:focus { border-color: var(--color-fg); }
+.dp-composer-actions { display: flex; justify-content: flex-end; gap: var(--space-sm); }
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 560px) {
+  nav, .controls, .grid-wrap, .filter-drawer { padding-left: var(--space-md); padding-right: var(--space-md); }
+  .tagline { display: none; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+  .stat { min-width: 68px; padding: var(--space-sm) var(--space-md); }
+  .stat-val { font-size: var(--font-size-base); }
+  .auth-box { padding: var(--space-lg); }
+
+  /* Nav: pull counter to its own top row */
+  .nav-top-row { display: flex; }
+  .nav-counter--desktop { display: none; }
+
+  /* Daily panel: full width, sane padding */
+  #daily-panel { width: 100vw; max-width: 100vw; }
+  .dp-inner { padding: var(--space-xl) var(--space-lg); }
+  .dp-date { font-size: var(--font-size-lg); }
+
+  body.daily-open .grid-wrap,
+  body.daily-open .pag,
+  body.daily-open .bottom-section,
+  body.daily-open .site-footer { margin-right: 0; }
+}
+@media (max-width: 720px) {
+  .tagline { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     EMAIL AUTH OVERLAY — zero-password, VV style
+     ═══════════════════════════════════════════════════════ -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <!-- Step 1: Email -->
+    <div id="auth-step-email">
+      <div class="auth-title">Sign in with email</div>
+      <div class="auth-sub">Enter your email to comment, vote, and get updates. No password needed.</div>
+      <input class="auth-input" type="email" id="auth-email" placeholder="you@email.com" onkeydown="if(event.key==='Enter')authSendCode()">
+      <div class="auth-error" id="auth-error-email"></div>
+      <div class="auth-actions">
+        <button class="auth-submit" onclick="authSendCode()">Continue</button>
+        <button class="auth-cancel" onclick="closeEmailAuth()">Cancel</button>
+      </div>
+    </div>
+    <!-- Step 2: Code verification -->
+    <div id="auth-step-code" style="display:none">
+      <div class="auth-title">Check your inbox</div>
+      <div class="auth-sub" id="auth-code-sub">We sent a 6-digit code to your email. It expires in 10 minutes.</div>
+      <div class="code-inputs" id="code-inputs">
+        <input class="code-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input class="code-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input class="code-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input class="code-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input class="code-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input class="code-digit" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+      </div>
+      <div class="auth-error" id="auth-error-code"></div>
+      <div class="auth-actions">
+        <button class="auth-submit" onclick="authVerifyCode()">Verify</button>
+        <button class="auth-cancel" onclick="authBackToEmail()">Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     ADMIN AUTH OVERLAY
+     ═══════════════════════════════════════════════════════ -->
+<div id="admin-auth-overlay">
+  <div class="auth-box">
+    <div class="auth-title">Admin access</div>
+    <div class="auth-sub">Enter admin password to unlock uploads.</div>
+    <input class="auth-input" type="password" id="admin-pw" placeholder="password" onkeydown="if(event.key==='Enter')chkAdminAuth()">
+    <div class="auth-error" id="admin-auth-error">Incorrect password.</div>
+    <div class="auth-actions">
+      <button class="auth-submit" onclick="chkAdminAuth()">Unlock</button>
+      <button class="auth-cancel" onclick="closeAdminAuth()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATS BAR (above nav — dark accordion) -->
+<div id="stats-bar">
+  <div class="stats">
+    <div class="stat"><div class="stat-lbl">Total</div><div class="stat-val">10,000</div></div>
+    <div class="stat"><div class="stat-lbl">Drawn</div><div class="stat-val" id="stat-done">0</div></div>
+    <div class="stat"><div class="stat-lbl">Drawing</div><div class="stat-val" id="stat-wip">0</div></div>
+    <div class="stat"><div class="stat-lbl">Remaining</div><div class="stat-val" id="stat-rem">10,000</div></div>
+    <div class="stat"><div class="stat-lbl">Complete</div><div class="stat-val" id="stat-pct">10,000</div></div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="search-wrap">
+      <span class="search-ic">⌕</span>
+      <input type="text" id="search" placeholder="Search dewd #..." oninput="doFilter()">
+    </div>
+    <button class="filter-toggle" id="filter-toggle-btn" onclick="toggleFilterDrawer()" title="Filters">≡</button>
+  </div>
+  <div class="filter-drawer" id="filter-drawer">
+    <div class="filters">
+      <button class="fb on" onclick="setF('all',this)">All</button>
+      <button class="fb" onclick="setF('done',this)">Done</button>
+      <button class="fb" onclick="setF('in-progress',this)">In Progress</button>
+      <button class="fb" onclick="setF('not-started',this)">Queue</button>
+    </div>
+    <select class="sort-select" onchange="doFilter()">
+      <option value="id-asc">ID ↑</option>
+      <option value="id-desc">ID ↓</option>
+      <option value="votes">Most Loved</option>
+      <option value="done-first">Done First</option>
+    </select>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-top-row">
+    <button class="nav-pill nav-counter" onclick="toggleStats()"><span class="nav-dot"></span> <span id="nav-done">0</span>/10,000</button>
+  </div>
+  <div class="nav-main-row">
+    <div class="nav-left">
+      <a class="logo" href="#">
+        <dotlottie-wc src="/punk-dewds-logo.lottie" style="width:154px;height:35px" autoplay loop></dotlottie-wc>
+      </a>
+      <span class="tagline">10,000 hand drawn DEWDs in 100 days.</span>
+    </div>
+    <div class="nav-actions">
+      <button class="nav-pill nav-counter nav-counter--desktop" onclick="toggleStats()"><span class="nav-dot"></span> <span id="nav-done-desktop">0</span>/10,000</button>
+      <button class="nav-pill nav-daily-btn" id="nav-daily-btn" onclick="toggleDaily()"><svg class="nav-daily-icon" viewBox="0 0 20.16 21.22" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.49,18.04h-4.24c-1.17,0-2.12-.95-2.12-2.12v-7.43h14.85v2.12c0,.59.47,1.06,1.06,1.06s1.06-.47,1.06-1.06v-4.24c0-2.34-1.9-4.24-4.24-4.24v-1.06c0-.59-.47-1.06-1.06-1.06s-1.06.47-1.06,1.06v1.06h-6.37v-1.06c0-.59-.47-1.06-1.06-1.06s-1.06.47-1.06,1.06v1.06C1.9,2.12,0,4.03,0,6.37v9.55c0,2.34,1.9,4.24,4.24,4.24h4.24c.59,0,1.06-.47,1.06-1.06s-.47-1.06-1.06-1.06ZM4.24,4.24h10.61c1.17,0,2.12.95,2.12,2.12H2.12c0-1.17.95-2.12,2.12-2.12Z"/><path d="M19.76,14.03c-.46-.37-1.12-.29-1.49.17l-3.5,4.38-1.28-1.28c-.41-.41-1.09-.41-1.5,0s-.41,1.09,0,1.5l2.12,2.12c.2.2.47.31.75.31.02,0,.04,0,.06,0,.3-.02.58-.16.77-.4l4.24-5.31c.37-.46.29-1.13-.17-1.49Z"/></svg> Daily</button>
+      <button class="nav-about-btn" id="about-btn" onclick="openAbout()" title="About this project — long press for admin">?</button>
+    </div>
+  </div>
+  <div class="nav-progress" id="nav-progress" style="width:0%"></div>
+</nav>
+
+<!-- DAILY + FEED PANEL (slide-out right sidebar) -->
+<div id="daily-panel">
+  <button class="dp-close" onclick="toggleDaily()" aria-label="Close"><svg viewBox="0 0 16.12 16.48" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M1.52,16.48c-.43,0-.79-.15-1.08-.46-.29-.31-.44-.66-.44-1.06,0-.21.05-.43.14-.66s.23-.43.42-.62c.48-.64,1.1-1.36,1.86-2.16s1.62-1.69,2.58-2.68c.19-.19.28-.39.28-.6,0-.24-.08-.44-.24-.6-.99-1.01-1.87-1.92-2.64-2.72-.77-.8-1.41-1.52-1.92-2.16-.32-.43-.48-.84-.48-1.24S.15.77.44.46c.29-.31.65-.46,1.08-.46.45,0,.88.17,1.28.52.67.51,1.39,1.14,2.18,1.9.79.76,1.67,1.63,2.66,2.62.13.13.28.2.44.2.13,0,.27-.07.4-.2.99-.99,1.87-1.86,2.66-2.62.79-.76,1.5-1.39,2.14-1.9.43-.35.87-.52,1.32-.52.43,0,.79.15,1.08.46.29.31.44.66.44,1.06,0,.19-.05.39-.14.62s-.23.46-.42.7c-.45.61-1.07,1.31-1.84,2.1-.77.79-1.65,1.69-2.64,2.7-.19.16-.28.36-.28.6,0,.19.11.39.32.6.96.99,1.83,1.88,2.6,2.68s1.4,1.53,1.88,2.2c.16.21.28.43.36.64.08.21.12.41.12.6,0,.4-.14.75-.42,1.06-.28.31-.63.46-1.06.46-.21,0-.43-.05-.64-.14-.21-.09-.44-.23-.68-.42-.67-.51-1.38-1.13-2.14-1.88-.76-.75-1.63-1.6-2.62-2.56-.19-.16-.33-.24-.44-.24-.19,0-.35.08-.48.24-.96.96-1.83,1.81-2.6,2.56-.77.75-1.48,1.36-2.12,1.84-.45.4-.91.6-1.36.6Z"/></svg></button>
+  <div class="dp-inner">
+    <!-- Day strip -->
+    <div class="dp-day-strip">
+      <button class="dp-arrow" onclick="dpShift(-1)" aria-label="Previous day">←</button>
+      <div class="dp-day-label">
+        <div class="dp-eyebrow" id="dp-eyebrow">TODAY</div>
+        <div class="dp-date" id="dp-date">—</div>
+      </div>
+      <button class="dp-arrow" id="dp-next" onclick="dpShift(1)" aria-label="Next day">→</button>
+    </div>
+
+    <!-- Tasks -->
+    <ul class="dp-tasks" id="dp-tasks"></ul>
+    <p class="dp-hint">Use ← → to flip between days.</p>
+
+    <!-- Feed -->
+    <div class="dp-feed-head">
+      <div>
+        <div class="dp-feed-title-row">
+          <!-- <svg class="dp-feed-icon" viewBox="0 0 20.99 19.14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M15.81,2.13H5.18c-.59,0-1.06-.48-1.06-1.06s.48-1.06,1.06-1.06h10.63c.59,0,1.06.48,1.06,1.06s-.48,1.06-1.06,1.06Z"/><path d="M17.94,5.85H3.05c-.59,0-1.06-.48-1.06-1.06s.48-1.06,1.06-1.06h14.89c.59,0,1.06.48,1.06,1.06s-.48,1.06-1.06,1.06Z"/><path d="M15.51,19.14H5.48c-1.9,0-3.59-1.28-4.1-3.12L.12,11.49c-.27-.97-.07-1.98.53-2.78s1.53-1.26,2.54-1.26h14.61c1.01,0,1.93.46,2.54,1.26s.8,1.82.53,2.78l-1.26,4.54c-.51,1.83-2.2,3.12-4.1,3.12ZM3.19,9.57c-.34,0-.64.15-.85.42-.2.27-.27.6-.18.93l1.26,4.54c.25.92,1.1,1.56,2.05,1.56h10.04c.95,0,1.79-.64,2.05-1.56l1.26-4.54c.09-.32.03-.66-.18-.93-.2-.27-.51-.42-.85-.42H3.19Z"/></svg> -->
+          <span class="dp-feed-title">Feed</span>
+        </div>
+        <div class="dp-feed-sub">Notes on the daily practice.</div>
+      </div>
+      <button class="dp-new-post-btn" id="dp-new-post" onclick="dpToggleComposer()" style="display:none">+ New Post</button>
+    </div>
+
+    <!-- Composer (admin only) -->
+    <div class="dp-composer" id="dp-composer">
+      <select id="dp-post-kind" style="font-family:var(--font-family);font-size:var(--font-size-sm);padding:6px 10px;border:1px solid var(--color-border);border-radius:var(--radius-sm);outline:none">
+        <option value="text">Text</option>
+        <option value="sketch">Sketch</option>
+        <option value="image">Image</option>
+        <option value="video">Video</option>
+      </select>
+      <textarea id="dp-post-body" placeholder="What's the story?"></textarea>
+      <input type="file" id="dp-post-file" accept="image/*" style="font-size:var(--font-size-xs)">
+      <div class="dp-composer-actions">
+        <button class="btn-secondary" onclick="dpToggleComposer()">Cancel</button>
+        <button class="btn-primary" id="dp-post-submit" onclick="dpSubmitPost()">Post</button>
+      </div>
+    </div>
+
+    <!-- Posts -->
+    <div id="dp-posts" class="dp-posts"></div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel">
+  <div class="admin-header">
+    Admin — drag & drop to upload drawings
+    <button class="btn-secondary" onclick="exitAdmin()">Lock</button>
+  </div>
+  <div class="dropzone" id="dropzone"
+    ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)"
+    onclick="document.getElementById('drop-file').click()">
+    Drag image files here — filename = token number (e.g. 0042.png)
+    <small>supports multiple files · click to browse</small>
+  </div>
+  <input type="file" id="drop-file" accept="image/*" multiple onchange="dzFiles(event.target.files)" style="display:none">
+  <div id="admin-preview">
+    <img id="admin-preview-img" src="" alt="">
+    <div id="admin-preview-info"><b id="admin-preview-name">—</b><span id="admin-preview-status"></span></div>
+  </div>
+  <div class="admin-row" style="margin-top:var(--space-md)">
+    <div class="admin-field">
+      <label>DEWD #</label>
+      <input type="number" id="admin-id" min="0" max="9999" placeholder="0–9999" style="width:90px">
+    </div>
+    <div class="admin-field">
+      <label>Status</label>
+      <select id="admin-status">
+        <option value="not-started">Not Started</option>
+        <option value="in-progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+    <div class="admin-field" style="flex:1;min-width:180px">
+      <label>IPFS Link</label>
+      <input type="text" id="admin-ipfs" placeholder="ipfs://...">
+    </div>
+    <button class="btn-primary" onclick="adminSave()">Save</button>
+    <button class="btn-secondary" onclick="exportJ()">Export</button>
+    <button class="btn-secondary" onclick="document.getElementById('import-file').click()">Import</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJ(event)">
+  </div>
+
+  <!-- GRID CROPPER -->
+  <div class="gc-section">
+    <div class="gc-title">Batch Grid Cropper — 12×9 in sheet → 48 squares</div>
+    <div class="gc-dropzone" id="gc-dropzone"
+      ondragover="event.preventDefault();this.classList.add('over')"
+      ondragleave="this.classList.remove('over')"
+      ondrop="event.preventDefault();this.classList.remove('over');gcLoadFile(event.dataTransfer.files[0])"
+      onclick="document.getElementById('gc-file').click()">
+      Drop a 12×9 sheet image here, or click to browse
+      <small>PNG, JPG, or TIFF · will be split into 8×6 grid (48 squares)</small>
+    </div>
+    <input type="file" id="gc-file" accept="image/*" style="display:none" onchange="gcLoadFile(this.files[0])">
+
+    <div class="gc-controls">
+      <div class="admin-field">
+        <label>Start #</label>
+        <input type="number" id="gc-start" min="0" max="9999" value="0" placeholder="0" style="width:90px">
+      </div>
+      <div class="admin-field">
+        <label>Columns</label>
+        <input type="number" id="gc-cols" min="1" max="20" value="8" style="width:60px">
+      </div>
+      <div class="admin-field">
+        <label>Rows</label>
+        <input type="number" id="gc-rows" min="1" max="20" value="6" style="width:60px">
+      </div>
+      <button class="btn-primary" id="gc-crop-btn" onclick="gcCrop()" disabled>Crop & Preview</button>
+      <button class="btn-primary" id="gc-zip-btn" onclick="gcDownloadZip()" disabled style="background:var(--color-accent);border-color:var(--color-accent)">Download ZIP</button>
+      <button class="btn-secondary" id="gc-upload-btn" onclick="gcUploadAll()" disabled>Upload Selected to App</button>
+    </div>
+
+    <div id="gc-status" class="gc-status" style="display:none"></div>
+    <div id="gc-preview" class="gc-preview-wrap" style="display:none">
+      <img id="gc-preview-img" src="" alt="Sheet preview">
+      <div class="gc-grid-overlay" id="gc-overlay"></div>
+      <canvas id="gc-canvas" style="display:none"></canvas>
+    </div>
+    <div id="gc-select-bar" class="gc-select-actions" style="display:none">
+      <button onclick="gcSelectAll()">Select All</button>
+      <button onclick="gcSelectNone()">Select None</button>
+      <span id="gc-select-count" class="gc-select-count"></span>
+    </div>
+    <div id="gc-thumbs" class="gc-thumbs"></div>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="grid-wrap">
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">No DEWDs match that filter.</div>
+</div>
+<div class="pag" id="pag"></div>
+
+<div class="bottom-section">
+  <a href="https://dewd.cool" target="_blank" rel="noopener" class="support-link">
+    <img src="/support-sticker-cream.svg" alt="Support your local artist" >
+  </a>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="https://x.com/derrickkempf" target="_blank" rel="noopener">X</a>
+    <a href="https://instagram.com/derrickkempf" target="_blank" rel="noopener">IG</a>
+    <a href="https://dewd.cool" target="_blank" rel="noopener">dewd.cool</a>
+  </div>
+  <div class="footer-copy">© Derrick Kempf (DEWD)</div>
+  <div class="footer-copy" style="font-size: 11px;max-width: 770px;line-height: 11px;color: #ccc;text-align: center;">All content on this website, including text, graphics, logos, photographs, laser etchings, video clips, doodads, misspellings, messages, system errors, or malfunctions are property of dewd.cool and/or Infinite NODE Foundation (who hold the CryptoPunks intellectual property), or its partners and protected by US and International copyright laws. This project is intended to document and showcase the work-in-progress of drawing all the CryptoPunks by hand in the DEWD style. DEWD.cool and Derrick Kempf is not associated with NODE or CryptoPunks in away way, other than viewing the digital artifacts and attempting to draw them by hand. No harm to me, or members of my family, or my pets. Any use of this site in publication must first be approved by NODE, and then drawn by hand with an ink pen on paper. Thank you. Take care and have fun out there. Blessings.
+  </div>
+</footer>
+
+<!-- MODAL -->
+<div class="backdrop" id="modal-backdrop" onclick="bgClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">DEWD #0000</div>
+      <div style="display:flex;align-items:center;gap:2px">
+        <div class="modal-nav">
+          <button class="mnb" onclick="navM(-1)">←</button>
+          <button class="mnb" onclick="navM(1)">→</button>
+        </div>
+        <button class="modal-close" onclick="closeM()">×</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ABOUT MODAL -->
+<div id="about-backdrop" onclick="if(event.target===this)closeAbout()">
+  <div class="about-box">
+    <div style="margin-bottom:var(--space-lg)">
+      <dotlottie-wc src="/punk-dewds-logo.lottie" style="width:154px;height:35px" autoplay loop></dotlottie-wc>
+    </div>
+    <p><strong>10,000 hand-drawn DEWDs.</strong> Every original DEWD, drawn by hand, one at a time. The goal? 100 days. That's 100 drawings a day. Actually, it's a bit more because 6 days into this challenge I pivoted away from using an existing IP (CryptoPunks) as reference, to drawing my own ideas as in the moment. This app tracks progress from DEWD #0000 to DEWD #9999.</p>
+    <p>Click any DEWD to see the original reference and the hand-drawn version (if complete). Vote for your favorites and leave a suggestion under any DEWD for how you'd like to see it drawn.</p>
+    <p>Drawing on what makes us human. One day at a time.</p>
+    <button class="btn-primary" onclick="closeAbout()">Close</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════
+const HASH  = 'c38152ef48447e4153b0867389457d60e7915d51aa6c66c58828b2fc7ff26eb6';
+const IMG   = id => `https://cryptopunks.app/images/cryptopunks/punk${String(id).padStart(4,'0')}.png`;
+const TOTAL = 10000;
+const PER   = 200;
+
+// Ethereum marketplace (CryptoPunks)
+const CONTRACT = '0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB';
+const RPC      = 'https://cloudflare-eth.com';
+
+// VV Mint contract (ERC-1155) — https://docs.mint.vv.xyz
+const MINT_CONTRACT = '0x38df3eed74fccacc7243b39ee3429d0366d666ce';
+const MINT_ABI = [
+  'function create(string tokenName, string tokenDescription, bytes[] tokenArtifact, uint32 tokenRenderer, uint128 tokenData)',
+  'function mint(uint256 tokenId, uint256 amount) payable',
+  'function mintOpenUntil(uint256 tokenId) view returns (uint256)',
+  'function latestTokenId() view returns (uint256)',
+  'function tokens(uint256) view returns (string name, string description, uint32 renderer, uint32 mintedBlock, uint64 closeAt, uint128 data)',
+  'function owner() view returns (address)',
+  'function withdraw()',
+  'function prepareArtifact(uint256 tokenId, bytes[] tokenArtifact, bool clear)',
+];
+
+// ── Global state ──
+let punks    = [];
+let filtered = [];
+let page     = 0;
+let curF     = 'all';
+let curMk    = 'all';
+let adminOn  = false;
+let curM     = null;
+const mkCache = {};
+const traitCache = {};
+
+// Fetch CryptoPunk traits from on-chain data
+async function fetchTraits(id) {
+  if (traitCache[id]) return traitCache[id];
+  try {
+    const resp = await fetch(`https://api.cryptopunks.app/v1/punks/${id}`);
+    if (resp.ok) {
+      const data = await resp.json();
+      const traits = data.attributes || data.traits || [];
+      traitCache[id] = traits;
+      return traits;
+    }
+  } catch(e) {}
+  // Fallback: scrape the well-known punk types + attributes from embedded data
+  return traitCache[id] || null;
+}
+
+// Well-known punk type & attribute data (compact lookup loaded on demand)
+const PUNK_TYPES = ['Male 1','Male 2','Male 3','Male 4','Female 1','Female 2','Female 3','Female 4','Zombie','Ape','Alien'];
+const PUNK_ATTRS = [
+  'Beanie','Choker','Pilot Helmet','Tiara','Orange Side','Buck Teeth','Welding Goggles','Pigtails','Pink With Hat',
+  'Top Hat','Spots','Rosy Cheeks','Blonde Short','Wild White Hair','Cowboy Hat','Wild Blonde','Straight Hair Blonde',
+  'Big Shades','Red Mohawk','Half Shaved','Blonde Bob','Vampire Hair','Clown Hair Green','Straight Hair Dark',
+  'Straight Hair','Silver Chain','Dark Hair','Purple Hair','Gold Chain','Medical Mask','Tassle Hat','Fedora',
+  'Police Cap','Clown Nose','Smile','Cap Forward','Hoodie','Front Beard Dark','Front Beard','Goat','Mole',
+  'Purple Eye Shadow','Blue Eye Shadow','Green Eye Shadow','Stringy Hair','Bandana','Classic Shades','Shadow Beard',
+  'Regular Shades','Big Beard','Pipe','VR','Frumpy Hair','Crazy Hair','Police Cap','Do-rag','Wild Hair',
+  'Knitted Cap','Mohawk Dark','Mohawk','Mohawk Thin','Cap','Small Shades','Nerd Glasses','Eye Mask','Eye Patch',
+  'Horned Rim Glasses','3D Glasses','Handlebars','Earring','Cigarette','Normal Beard','Normal Beard Black',
+  'Chinstrap','Luxurious Beard','Mustache','Headband','Shaved Head','Messy Hair','Peak Spike','Clown Eyes Blue',
+  'Clown Eyes Green','Hot Lipstick','Black Lipstick','Purple Lipstick','Muttonchops','Frown'
+];
+
+// ── Visitor ID ──
+const VID = (() => {
+  let v = localStorage.getItem('pd-vid');
+  if (!v) { v = Math.random().toString(36).slice(2); localStorage.setItem('pd-vid', v); }
+  return v;
+})();
+
+// ═══════════════════════════════════════════════════════
+// EMAIL AUTH — zero-password flow
+// ═══════════════════════════════════════════════════════
+let currentUser = JSON.parse(localStorage.getItem('pd-user') || 'null');
+let pendingEmail = '';
+
+function isSignedIn() { return !!currentUser; }
+
+function openAbout() {
+  document.getElementById('about-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeAbout() {
+  document.getElementById('about-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function openEmailAuth() {
+  document.getElementById('auth-step-email').style.display = '';
+  document.getElementById('auth-step-code').style.display = 'none';
+  document.getElementById('auth-error-email').style.display = 'none';
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('auth-email').focus(), 200);
+}
+
+function closeEmailAuth() {
+  document.getElementById('auth-overlay').classList.remove('open');
+}
+
+async function authSendCode() {
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    document.getElementById('auth-error-email').textContent = 'Enter a valid email address.';
+    document.getElementById('auth-error-email').style.display = 'block';
+    return;
+  }
+
+  pendingEmail = email;
+
+  // Disable button while sending
+  const btn = document.querySelector('#auth-step-email .auth-submit');
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/auth/send-code', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      document.getElementById('auth-error-email').textContent = data.error || 'Something went wrong.';
+      document.getElementById('auth-error-email').style.display = 'block';
+      btn.textContent = 'Continue';
+      btn.disabled = false;
+      return;
+    }
+
+    // Show code step
+    document.getElementById('auth-code-sub').textContent = `We sent a 6-digit code to ${email}. It expires in 10 minutes.`;
+    document.getElementById('auth-step-email').style.display = 'none';
+    document.getElementById('auth-step-code').style.display = '';
+    document.getElementById('auth-error-code').style.display = 'none';
+
+    const digits = document.querySelectorAll('.code-digit');
+    digits.forEach(d => d.value = '');
+    setTimeout(() => digits[0].focus(), 100);
+  } catch (err) {
+    document.getElementById('auth-error-email').textContent = 'Network error. Try again.';
+    document.getElementById('auth-error-email').style.display = 'block';
+  } finally {
+    btn.textContent = 'Continue';
+    btn.disabled = false;
+  }
+}
+
+async function authVerifyCode() {
+  const digits = document.querySelectorAll('.code-digit');
+  const entered = Array.from(digits).map(d => d.value).join('');
+  if (entered.length < 6) {
+    document.getElementById('auth-error-code').textContent = 'Enter all 6 digits.';
+    document.getElementById('auth-error-code').style.display = 'block';
+    return;
+  }
+
+  const btn = document.querySelector('#auth-step-code .auth-submit');
+  btn.textContent = 'Verifying…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/auth/verify', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingEmail, code: entered })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      document.getElementById('auth-error-code').textContent = data.error || 'Invalid code.';
+      document.getElementById('auth-error-code').style.display = 'block';
+      btn.textContent = 'Verify';
+      btn.disabled = false;
+      return;
+    }
+
+    // Signed in — server set the cookie, store locally too
+    currentUser = { email: data.email, since: Date.now() };
+    localStorage.setItem('pd-user', JSON.stringify(currentUser));
+    pendingEmail = '';
+    closeEmailAuth();
+    toast('Signed in', true);
+    if (curM !== null) openM(curM);
+  } catch (err) {
+    document.getElementById('auth-error-code').textContent = 'Network error. Try again.';
+    document.getElementById('auth-error-code').style.display = 'block';
+  } finally {
+    btn.textContent = 'Verify';
+    btn.disabled = false;
+  }
+}
+
+function authBackToEmail() {
+  document.getElementById('auth-step-email').style.display = '';
+  document.getElementById('auth-step-code').style.display = 'none';
+  setTimeout(() => document.getElementById('auth-email').focus(), 100);
+}
+
+async function signOut() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+  currentUser = null;
+  localStorage.removeItem('pd-user');
+  toast('Signed out');
+  if (curM !== null) openM(curM);
+}
+
+// Code input auto-advance
+document.addEventListener('DOMContentLoaded', () => {
+  const digits = document.querySelectorAll('.code-digit');
+  digits.forEach((inp, i) => {
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
+      if (inp.value && i < 5) digits[i + 1].focus();
+      if (inp.value && i === 5) authVerifyCode();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !inp.value && i > 0) {
+        digits[i - 1].focus();
+        digits[i - 1].value = '';
+      }
+    });
+    inp.addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+      text.split('').forEach((ch, idx) => { if (digits[idx]) digits[idx].value = ch; });
+      if (text.length === 6) authVerifyCode();
+      else if (digits[text.length]) digits[text.length].focus();
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════
+function applyPunkData(saved) {
+  punks = Array.from({ length: TOTAL }, (_, i) => {
+    const d = saved[i] || saved[String(i)] || {};
+    return {
+      id: i, status: d.status || 'not-started',
+      art: d.art || null, ipfs: d.ipfs || '',
+      votes: d.votes || 0, votedBy: d.votedBy || [],
+      comments: d.comments || [],
+      optimizedSvg: d.optimizedSvg || null,
+      mintStatus: d.mintStatus || 'none',
+      tokenId: d.tokenId ?? null,
+    };
+  });
+}
+
+function loadPunks() {
+  const raw = localStorage.getItem('pd-v2');
+  const saved = raw ? JSON.parse(raw) : {};
+  applyPunkData(saved);
+}
+
+async function loadPunksFromServer() {
+  try {
+    const r = await fetch('/api/punks', { cache: 'no-store', credentials: 'include' });
+    if (r.ok) {
+      const server = await r.json();
+      if (server && Object.keys(server).length) {
+        applyPunkData(server);
+        // Also update localStorage so it stays in sync
+        savePunksLocal();
+        doStats(); doFilter();
+        console.log('[punks] loaded from server:', Object.keys(server).length, 'entries');
+      }
+    }
+  } catch (e) {
+    console.warn('[punks] server load failed, using localStorage:', e.message);
+  }
+}
+
+function buildPunkPayload() {
+  const out = {};
+  punks.forEach(p => {
+    if (p.status !== 'not-started' || p.art || p.ipfs || p.votes || p.comments.length || p.optimizedSvg || p.mintStatus !== 'none') {
+      const entry = { status:p.status, art:p.art, ipfs:p.ipfs, votes:p.votes, votedBy:p.votedBy, comments:p.comments };
+      if (p.optimizedSvg) entry.optimizedSvg = p.optimizedSvg;
+      if (p.mintStatus !== 'none') entry.mintStatus = p.mintStatus;
+      if (p.tokenId != null) entry.tokenId = p.tokenId;
+      out[p.id] = entry;
+    }
+  });
+  return out;
+}
+
+function savePunksLocal() {
+  try { localStorage.setItem('pd-v2', JSON.stringify(buildPunkPayload())); }
+  catch(e) { toast('Storage full — export first!'); }
+}
+
+function save() {
+  const out = buildPunkPayload();
+  // Always save to localStorage
+  try { localStorage.setItem('pd-v2', JSON.stringify(out)); }
+  catch(e) { toast('Storage full — export first!'); }
+  // If admin, also sync to server
+  if (adminOn) {
+    fetch('/api/punks', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(out),
+    }).catch(e => console.warn('[punks] server save failed:', e.message));
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// STATS + PROGRESS BAR
+// ═══════════════════════════════════════════════════════
+function doStats() {
+  const done = punks.filter(p => p.status === 'done').length;
+  const wip  = punks.filter(p => p.status === 'in-progress').length;
+  const rem  = TOTAL - done;
+  const pct  = (done / TOTAL * 100).toFixed(1);
+  document.getElementById('stat-done').textContent = done.toLocaleString();
+  document.getElementById('stat-wip').textContent  = wip.toLocaleString();
+  document.getElementById('stat-rem').textContent  = rem.toLocaleString();
+  document.getElementById('stat-pct').textContent  = pct + '%';
+  document.getElementById('nav-done').textContent  = done.toLocaleString();
+  const ddt = document.getElementById('nav-done-desktop');
+  if (ddt) ddt.textContent = done.toLocaleString();
+  // Progress bar on nav
+  document.getElementById('nav-progress').style.width = pct + '%';
+}
+
+// ═══════════════════════════════════════════════════════
+// FILTER + SORT
+// ═══════════════════════════════════════════════════════
+function doFilter() {
+  const q   = document.getElementById('search').value.trim().toLowerCase();
+  const srt = document.querySelector('.sort-select').value;
+  const ord = { done:0, 'in-progress':1, 'not-started':2 };
+
+  filtered = punks.filter(p => {
+    const mf = curF  === 'all' || p.status === curF;
+    const ms = !q    || String(p.id).includes(q);
+    const mk = curMk === 'all' || mkCache[p.id] === curMk;
+    return mf && ms && mk;
+  });
+
+  if      (srt === 'id-asc')    filtered.sort((a,b) => a.id - b.id);
+  else if (srt === 'id-desc')   filtered.sort((a,b) => b.id - a.id);
+  else if (srt === 'votes')     filtered.sort((a,b) => b.votes - a.votes);
+  else                          filtered.sort((a,b) => ord[a.status] - ord[b.status]);
+
+  page = 0;
+  render();
+  renderPag();
+}
+
+function setF(f, btn) {
+  curF = f;
+  document.querySelectorAll('.fb').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  doFilter();
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER GRID
+// ═══════════════════════════════════════════════════════
+function render() {
+  const grid  = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  const slice = filtered.slice(page * PER, (page + 1) * PER);
+
+  if (!slice.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  grid.innerHTML = slice.map(p => {
+    const dc    = p.status === 'done' ? 'done' : p.status === 'in-progress' ? 'wip' : '';
+    const mkcls = mkCache[p.id] || '';
+    const hasUpload = !!p.art;
+    const imgInner = hasUpload
+      ? `<img class="ref" src="${IMG(p.id)}" loading="lazy" onerror="this.style.opacity='.15'"><img class="art" src="${p.art}" loading="lazy"><div class="card-halftone"><img src="/halftone-pattern.svg" alt=""></div>`
+      : '';
+    const hc    = p.votedBy.includes(VID) ? 'on' : '';
+    const ddAttrs = adminOn
+      ? `ondragover="cardDragOver(event,${p.id})" ondragleave="cardDragLeave(event,${p.id})" ondrop="cardDrop(event,${p.id})"`
+      : '';
+    return `<div class="card ${dc} ${mkcls} ${hasUpload ? 'has-upload' : 'no-upload'}" data-id="${p.id}" onclick="openM(${p.id})" ${ddAttrs}>
+      <div class="card-img">
+        ${imgInner}
+        <div class="card-overlay">
+          <span class="card-id">#${String(p.id).padStart(4,'0')}</span>
+          <div class="overlay-actions">
+            <span class="hrt ${hc}" onclick="event.stopPropagation();qv(${p.id},this)">♥ ${p.votes}</span>
+            ${p.mintStatus === 'minted' ? `<span style="color:var(--color-accent)" title="Minted">✦</span>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  fetchVisibleMk();
+}
+
+// ═══════════════════════════════════════════════════════
+// PAGINATION
+// ═══════════════════════════════════════════════════════
+function renderPag() {
+  const total = Math.ceil(filtered.length / PER);
+  const el    = document.getElementById('pag');
+  if (total <= 1) { el.innerHTML = ''; return; }
+
+  let h = `<button class="pg" onclick="goP(${page-1})" ${page===0?'disabled':''}>←</button>`;
+  const s = Math.max(0, page - 3), e = Math.min(total - 1, page + 3);
+  if (s > 0) h += `<button class="pg" onclick="goP(0)">1</button><span class="ps">…</span>`;
+  for (let i = s; i <= e; i++) h += `<button class="pg ${i===page?'on':''}" onclick="goP(${i})">${i+1}</button>`;
+  if (e < total - 1) h += `<span class="ps">…</span><button class="pg" onclick="goP(${total-1})">${total}</button>`;
+  h += `<button class="pg" onclick="goP(${page+1})" ${page===total-1?'disabled':''}>→</button>`;
+  el.innerHTML = h;
+}
+
+function goP(n) {
+  const total = Math.ceil(filtered.length / PER);
+  if (n < 0 || n >= total) return;
+  page = n; render(); renderPag();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════
+function openM(id) {
+  if (_justDropped) return;
+  curM = id;
+  document.getElementById('modal-title').textContent = `DEWD #${String(id).padStart(4,'0')}`;
+  renderMBody(id);
+  document.getElementById('modal-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (!mkCache[id]) fetchMkBatch([id]).then(() => patchMkBadge(id));
+}
+
+function closeM() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+  curM = null;
+}
+
+function bgClick(e) { if (e.target === document.getElementById('modal-backdrop')) closeM(); }
+
+function navM(d) {
+  if (curM === null) return;
+  const idx = filtered.findIndex(p => p.id === curM);
+  const nx  = filtered[idx + d];
+  if (nx) openM(nx.id);
+}
+
+function renderMBody(id) {
+  const p     = punks[id];
+  const sc    = p.status === 'done' ? 'done' : p.status === 'in-progress' ? 'wip' : 'ns';
+  const st    = p.status.replace(/-/g,' ').toUpperCase();
+  const loved = p.votedBy.includes(VID);
+  const mkcls = mkCache[id] || '';
+  const mkLbls = { 'mk-blue':'NOT FOR SALE', 'mk-red':'FOR SALE', 'mk-purple':'ACTIVE BID' };
+  const mkTxt  = mkcls ? mkLbls[mkcls] : '';
+  const mkCls2 = mkcls || 'ns';
+
+  const drawHTML = p.art
+    ? `<div class="drawing-area"><img src="${p.art}" alt="drawing"><div class="halftone-overlay"><img src="/halftone-pattern.svg" alt=""></div></div>`
+    : `<div class="drawing-area"><div class="drawing-empty">drawing not yet uploaded</div></div>`;
+
+  const admHTML = adminOn ? `
+    <div>
+      <div class="section-label">Upload Drawing</div>
+      <label class="modal-dropzone" id="mdz${id}"
+        ondragover="mdOver(event,${id})" ondragleave="mdLeave(${id})" ondrop="mdDrop(event,${id})"
+        for="mf${id}">
+        Drag or click to upload for #${String(id).padStart(4,'0')}
+        <small>SVG recommended — auto-optimized for on-chain minting</small>
+      </label>
+      <input type="file" id="mf${id}" accept="image/*,.svg" style="display:none" onchange="mfile(event,${id})">
+    </div>
+    <div>
+      <div class="section-label">Status</div>
+      <div class="radio-group">
+        <label class="radio-opt"><input type="radio" name="mst${id}" value="not-started" ${p.status==='not-started'?'checked':''}><span class="radio-lbl">Not started</span></label>
+        <label class="radio-opt"><input type="radio" name="mst${id}" value="in-progress" ${p.status==='in-progress'?'checked':''}><span class="radio-lbl">In progress</span></label>
+        <label class="radio-opt"><input type="radio" name="mst${id}" value="done" ${p.status==='done'?'checked':''}><span class="radio-lbl">Done</span></label>
+      </div>
+    </div>
+    <div class="admin-field" style="width:100%">
+      <label>IPFS Link</label>
+      <input class="input" type="text" id="mip" value="${esc(p.ipfs)}" placeholder="ipfs://...">
+    </div>
+    <button class="btn-primary" onclick="msave(${id})">Save changes</button>
+    ${p.art ? `<button class="btn-secondary" onclick="mdelArt(${id})" style="margin-top:4px;width:100%;padding:8px">Remove drawing</button>` : ''}` : '';
+
+  const ipfsRow = p.ipfs
+    ? `<a class="ipfs-link" href="${esc(p.ipfs)}" target="_blank" rel="noopener">${esc(p.ipfs.slice(0,55))}…</a>`
+    : '';
+
+  // Mint section — two flows:
+  // 1. Admin (owner): "Create Token" → calls create() on VV Mint contract, opens 24h window
+  // 2. Public: "Collect" → calls mint() during the 24h window
+  const acquireHTML = '';
+
+  // Comments — gated behind email signup
+  const cmtsHTML = p.comments.length
+    ? p.comments.map(c => `<div class="comment">
+        <div class="comment-name">${esc(c.name)}</div>
+        <div class="comment-text">${esc(c.text)}</div>
+        <div class="comment-time">${c.time}</div>
+      </div>`).join('')
+    : `<div style="font-size:var(--font-size-xs);color:var(--color-muted)">No comments yet.</div>`;
+
+  const commentFormHTML = isSignedIn()
+    ? `<div style="display:flex;flex-direction:column;gap:6px;margin-top:var(--space-sm)">
+        <textarea class="input" id="ct" placeholder="Leave a comment…"></textarea>
+        <button class="btn-primary" onclick="postC(${id})">Post</button>
+      </div>`
+    : `<div class="gate-prompt" style="margin-top:var(--space-sm)">
+        <p>Sign in with your email to leave a comment or vote.</p>
+        <button class="gate-signup-btn" onclick="openEmailAuth()">Sign in with email</button>
+      </div>`;
+
+  const traitsContainerId = `traits-${id}`;
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="punk-row">
+      <div class="punk-thumb">
+        <img class="ref" src="${IMG(id)}" alt="DEWD #${id}" onerror="this.style.opacity='.15'">
+      </div>
+      <div class="punk-info">
+        <div class="punk-num">#${String(id).padStart(4,'0')}</div>
+        <div class="trait-pills" id="${traitsContainerId}"><span class="status-badge ${sc}" style="font-size:9px">${st}</span></div>
+        ${ipfsRow}
+      </div>
+    </div>
+    ${drawHTML}
+    ${acquireHTML}
+    ${admHTML}
+    <div>
+      <div class="section-label">Community love</div>
+      <div class="vote-row">
+        <button class="vote-btn ${loved?'on':''}" onclick="${isSignedIn() ? `vote(${id})` : `openEmailAuth()`}">${loved?'♥':'♥'}</button>
+        <span class="vote-count">${p.votes}</span>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Comments (${p.comments.length})</div>
+      <div class="comments">${cmtsHTML}</div>
+      ${commentFormHTML}
+    </div>
+    `;
+
+  // Load trait pills for all punks
+  loadTraitPills(id, traitsContainerId);
+}
+
+let _traitsLoaded = false;
+let _traitsPromise = null;
+async function loadTraitPills(id, containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (traitCache[id]) { renderTraitPills(el, traitCache[id]); return; }
+  // Load the full CSV once
+  if (!_traitsLoaded && !_traitsPromise) {
+    _traitsPromise = fetch('https://raw.githubusercontent.com/cryptopunksnotdead/punks.attributes/master/original/cryptopunks.csv')
+      .then(r => r.ok ? r.text() : '')
+      .then(csv => { if (csv) parsePunkTraitsCSV(csv); _traitsLoaded = true; })
+      .catch(e => { console.log('Trait fetch failed:', e); _traitsLoaded = true; });
+  }
+  if (_traitsPromise) await _traitsPromise;
+  if (traitCache[id]) { renderTraitPills(el, traitCache[id]); return; }
+}
+
+function parsePunkTraitsCSV(csv) {
+  const lines = csv.trim().split('\n');
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    // Format: id, type, gender, skin tone, count, accessories (/ separated)
+    // e.g.: 0, Human, Female, Medium, 3, Green Eye Shadow / Earring / Blonde Bob
+    const firstComma = line.indexOf(',');
+    if (firstComma === -1) continue;
+    const punkId = parseInt(line.slice(0, firstComma).trim());
+    if (isNaN(punkId)) continue;
+    const rest = line.slice(firstComma + 1);
+    // Split only the first 4 commas to isolate: type, gender, skin tone, count
+    // Everything after the 5th field is accessories separated by " / "
+    const parts = [];
+    let cur = rest, ci;
+    for (let f = 0; f < 4; f++) {
+      ci = cur.indexOf(',');
+      if (ci === -1) { parts.push(cur.trim()); cur = ''; break; }
+      parts.push(cur.slice(0, ci).trim());
+      cur = cur.slice(ci + 1);
+    }
+    const accStr = cur.trim();
+    const type = parts[0] || '';
+    const gender = parts[1] || '';
+    const accessories = accStr ? accStr.split('/').map(s => s.trim()).filter(Boolean) : [];
+    const traits = [];
+    if (gender && type) traits.push(`${gender} ${type}`);
+    else if (type) traits.push(type);
+    traits.push(...accessories);
+    traitCache[punkId] = traits;
+  }
+}
+
+function renderTraitPills(el, traits) {
+  if (!traits || traits.length === 0) return;
+  el.innerHTML = traits.map((t, i) =>
+    `<span class="trait-pill ${i === 0 ? 'type' : ''}">${t}</span>`
+  ).join('');
+}
+
+function patchMkBadge(id) {
+  const el = document.getElementById('mkb-' + id);
+  if (!el) return;
+  const cls = mkCache[id] || '';
+  const lbl = { 'mk-blue':'NOT FOR SALE', 'mk-red':'FOR SALE', 'mk-purple':'ACTIVE BID' };
+  if (cls) { el.className = `status-badge ${cls}`; el.textContent = lbl[cls]; }
+}
+
+// ═══════════════════════════════════════════════════════
+// CARD DRAG-DROP (admin)
+// ═══════════════════════════════════════════════════════
+let _justDropped = false;
+function cardDragOver(e, id) {
+  if (!adminOn) return;
+  e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
+  document.querySelector(`[data-id="${id}"]`)?.classList.add('admin-drop-target');
+}
+function cardDragLeave(e, id) {
+  if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget)) return;
+  document.querySelector(`[data-id="${id}"]`)?.classList.remove('admin-drop-target');
+}
+function cardDrop(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  document.querySelector(`[data-id="${id}"]`)?.classList.remove('admin-drop-target');
+  const file = e.dataTransfer.files[0];
+  if (!file || !adminOn) return;
+  _justDropped = true;
+  setTimeout(() => _justDropped = false, 200);
+  readArt(file, id);
+}
+function mdOver(e,id) { e.preventDefault(); document.getElementById('mdz'+id).classList.add('over'); }
+function mdLeave(id) { document.getElementById('mdz'+id).classList.remove('over'); }
+function mdDrop(e,id) { e.preventDefault(); mdLeave(id); if (e.dataTransfer.files[0]) readArt(e.dataTransfer.files[0], id); }
+function mfile(e,id) { if (e.target.files[0]) readArt(e.target.files[0], id); }
+function readArt(file, id) {
+  const isSvg = file.type === 'image/svg+xml' || file.name.endsWith('.svg');
+
+  if (isSvg) {
+    // Read as text, optimize via svgo, store both versions
+    const tr = new FileReader();
+    tr.onload = async ev => {
+      const rawSvg = ev.target.result;
+      try {
+        toast('Optimizing SVG…');
+        const resp = await fetch('/api/optimize', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ svg: rawSvg }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error);
+
+        // Store optimized SVG as data URL for display + raw optimized text for minting
+        punks[id].art = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(data.svg)));
+        punks[id].optimizedSvg = data.svg;
+        punks[id].mintStatus = 'waiting';
+        punks[id].status = 'done';
+        save(); doStats(); doFilter(); openM(id);
+        toast(`SVG optimized (${data.savings} smaller) — ready to mint`, true);
+      } catch (err) {
+        // Fallback: store unoptimized
+        punks[id].art = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(rawSvg)));
+        punks[id].optimizedSvg = rawSvg;
+        punks[id].mintStatus = 'waiting';
+        punks[id].status = 'done';
+        save(); doStats(); doFilter(); openM(id);
+        toast('SVG stored (optimization failed: ' + err.message + ')', false);
+      }
+    };
+    tr.readAsText(file);
+  } else {
+    // Non-SVG: store as base64 data URL (original behavior)
+    const r = new FileReader();
+    r.onload = ev => {
+      punks[id].art = ev.target.result;
+      punks[id].status = 'done';
+      save(); doStats(); doFilter(); openM(id);
+      toast('Drawing uploaded for #' + id, true);
+    };
+    r.readAsDataURL(file);
+  }
+}
+function msave(id) {
+  const radio = document.querySelector(`input[name="mst${id}"]:checked`);
+  punks[id].status = radio ? radio.value : punks[id].status;
+  const ip = document.getElementById('mip').value.trim();
+  if (ip) punks[id].ipfs = ip;
+  save(); doStats(); doFilter(); closeM();
+  toast('Saved DEWD #' + id, true);
+}
+function mdelArt(id) {
+  if (!confirm(`Remove drawing for DEWD #${String(id).padStart(4,'0')}?`)) return;
+  punks[id].art = null;
+  punks[id].optimizedSvg = null;
+  punks[id].mintStatus = 'none';
+  punks[id].tokenId = null;
+  save(); doStats(); doFilter(); openM(id);
+  toast('Drawing removed for #' + id, true);
+}
+
+// ═══════════════════════════════════════════════════════
+// VOTES
+// ═══════════════════════════════════════════════════════
+function vote(id) {
+  if (!isSignedIn()) { openEmailAuth(); return; }
+  const p = punks[id];
+  if (p.votedBy.includes(VID)) {
+    p.votes = Math.max(0, p.votes - 1);
+    p.votedBy = p.votedBy.filter(v => v !== VID);
+  } else {
+    p.votes++; p.votedBy.push(VID);
+  }
+  save(); openM(id); doFilter();
+}
+function qv(id, el) {
+  if (!isSignedIn()) { openEmailAuth(); return; }
+  const p = punks[id];
+  if (!p.votedBy.includes(VID)) {
+    p.votes++; p.votedBy.push(VID);
+    save(); el.classList.add('on'); el.textContent = '♥ ' + p.votes;
+    toast('♥', true);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// COMMENTS — gated behind email signup
+// ═══════════════════════════════════════════════════════
+function postC(id) {
+  if (!isSignedIn()) { openEmailAuth(); return; }
+  const text = document.getElementById('ct').value.trim();
+  if (!text) return;
+  punks[id].comments.unshift({
+    name: currentUser.email,
+    text,
+    time: new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+  });
+  save(); openM(id); toast('Comment posted', true);
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════════════════
+function dzOver(e) { e.preventDefault(); document.getElementById('dropzone').classList.add('over'); }
+function dzLeave() { document.getElementById('dropzone').classList.remove('over'); }
+function dzDrop(e) { e.preventDefault(); dzLeave(); dzFiles(e.dataTransfer.files); }
+function dzFiles(files) {
+  let count = 0, bad = [];
+  const total = files.length;
+  if (!total) return;
+
+  function showPreview(id, artUrl, fileName) {
+    if (count === 1) {
+      document.getElementById('admin-preview-img').src = artUrl;
+      document.getElementById('admin-preview-name').textContent = `#${String(id).padStart(4,'0')} — ${fileName}`;
+      document.getElementById('admin-preview-status').textContent = ` → ${punks[id].status}`;
+      document.getElementById('admin-preview').style.display = 'flex';
+    }
+  }
+
+  Array.from(files).forEach(file => {
+    const base = file.name.replace(/\.[^.]+$/, '');
+    const id   = parseInt(base, 10);
+    if (isNaN(id) || id < 0 || id >= TOTAL) { bad.push(file.name); checkDone(); return; }
+
+    const isSvg = file.type === 'image/svg+xml' || file.name.endsWith('.svg');
+
+    if (isSvg) {
+      const tr = new FileReader();
+      tr.onload = async ev => {
+        const rawSvg = ev.target.result;
+        try {
+          const resp = await fetch('/api/optimize', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ svg: rawSvg }),
+          });
+          const data = await resp.json();
+          const svgText = resp.ok ? data.svg : rawSvg;
+          punks[id].art = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
+          punks[id].optimizedSvg = svgText;
+          punks[id].mintStatus = 'waiting';
+        } catch {
+          punks[id].art = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(rawSvg)));
+          punks[id].optimizedSvg = rawSvg;
+          punks[id].mintStatus = 'waiting';
+        }
+        punks[id].status = 'done';
+        count++;
+        showPreview(id, punks[id].art, file.name);
+        checkDone();
+      };
+      tr.readAsText(file);
+    } else {
+      const r = new FileReader();
+      r.onload = ev => {
+        punks[id].art = ev.target.result;
+        punks[id].status = 'done';
+        count++;
+        showPreview(id, ev.target.result, file.name);
+        checkDone();
+      };
+      r.readAsDataURL(file);
+    }
+  });
+
+  function checkDone() {
+    if (count + bad.length === total) {
+      save(); doStats(); doFilter();
+      const svgCount = Array.from(files).filter(f => f.type === 'image/svg+xml' || f.name.endsWith('.svg')).length;
+      const msg = `Uploaded ${count} drawing${count!==1?'s':''}${svgCount ? ` (${svgCount} SVG optimized)` : ''}${bad.length?' ('+bad.length+' skipped)':''}`;
+      toast(msg, true);
+    }
+  }
+}
+
+function adminSave() {
+  const id = parseInt(document.getElementById('admin-id').value);
+  if (isNaN(id) || id < 0 || id >= TOTAL) { toast('Invalid DEWD #'); return; }
+  punks[id].status = document.getElementById('admin-status').value;
+  const ip = document.getElementById('admin-ipfs').value.trim();
+  if (ip) punks[id].ipfs = ip;
+  save(); doStats(); doFilter();
+  toast('Saved DEWD #' + id, true);
+  document.getElementById('admin-id').value  = '';
+  document.getElementById('admin-ipfs').value = '';
+}
+
+// ── Export / Import ──
+function exportJ() {
+  const out = {};
+  punks.forEach(p => {
+    if (p.status !== 'not-started' || p.ipfs || p.votes || p.comments.length || p.optimizedSvg || p.mintStatus !== 'none') {
+      const entry = { status:p.status, ipfs:p.ipfs, votes:p.votes, votedBy:p.votedBy, comments:p.comments };
+      if (p.optimizedSvg) entry.optimizedSvg = '(svg)';
+      if (p.mintStatus !== 'none') entry.mintStatus = p.mintStatus;
+      if (p.tokenId != null) entry.tokenId = p.tokenId;
+      out[p.id] = entry;
+    }
+  });
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+  Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'punkdewds.json' }).click();
+}
+function importJ(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      Object.entries(d).forEach(([k,v]) => {
+        const i = parseInt(k);
+        if (i >= 0 && i < TOTAL) punks[i] = { ...punks[i], ...v, id: i };
+      });
+      save(); doStats(); doFilter(); toast('Data imported', true);
+    } catch { toast('Invalid JSON file'); }
+  };
+  r.readAsText(f);
+}
+
+// ═══════════════════════════════════════════════════════
+// ETHEREUM MARKETPLACE READS
+// ═══════════════════════════════════════════════════════
+async function ethCall(selector, tokenId) {
+  const data = '0x' + selector + tokenId.toString(16).padStart(64, '0');
+  try {
+    const res = await fetch(RPC, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc:'2.0', method:'eth_call', params:[{ to:CONTRACT, data },'latest'], id:1 })
+    });
+    const j = await res.json();
+    return j.result || '0x';
+  } catch { return '0x'; }
+}
+function decodeOffer(hex) { if (!hex || hex === '0x' || hex.length < 66) return false; return parseInt(hex.slice(2, 66), 16) === 1; }
+function decodeBid(hex)   { if (!hex || hex === '0x' || hex.length < 66) return false; return parseInt(hex.slice(2, 66), 16) === 1; }
+
+async function fetchMkBatch(ids) {
+  for (let i = 0; i < ids.length; i += 4) {
+    const batch = ids.slice(i, i + 4);
+    await Promise.all(batch.map(async id => {
+      const [offerHex, bidHex] = await Promise.all([
+        ethCall('088f11f3', id), ethCall('6e743fa9', id)
+      ]);
+      mkCache[id] = decodeOffer(offerHex) ? 'mk-red' : decodeBid(bidHex) ? 'mk-purple' : 'mk-blue';
+    }));
+  }
+}
+
+async function fetchVisibleMk() {
+  const slice    = filtered.slice(page * PER, (page + 1) * PER);
+  const uncached = slice.map(p => p.id).filter(id => !mkCache[id]);
+  if (!uncached.length) return;
+  await fetchMkBatch(uncached);
+  uncached.forEach(id => {
+    const card = document.querySelector(`[data-id="${id}"]`);
+    if (!card) return;
+    card.classList.remove('mk-blue', 'mk-red', 'mk-purple');
+    if (mkCache[id]) card.classList.add(mkCache[id]);
+  });
+  if (curMk !== 'all') doFilter();
+}
+
+// ═══════════════════════════════════════════════════════
+// WALLET + MINTING (ERC-1155)
+// ═══════════════════════════════════════════════════════
+let walletProvider = null;
+let walletSigner   = null;
+let walletAddress  = null;
+
+async function connectWallet() {
+  if (!window.ethereum) {
+    toast('No wallet found — install MetaMask or similar');
+    return null;
+  }
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const accounts = await provider.send('eth_requestAccounts', []);
+    walletSigner   = await provider.getSigner();
+    walletAddress  = accounts[0];
+    walletProvider = provider;
+    return walletSigner;
+  } catch (err) {
+    toast('Wallet connection failed: ' + (err.message || err));
+    return null;
+  }
+}
+
+// ── Admin: create token on-chain (owner only) ──
+// Registers the SVG artifact on the VV Mint contract and opens a 24h mint window.
+async function createToken(id) {
+  const p = punks[id];
+  if (!p.optimizedSvg) { toast('No optimized SVG — upload an SVG first'); return; }
+  if (!walletSigner) { const s = await connectWallet(); if (!s) return; }
+
+  const paddedId = String(id).padStart(4, '0');
+  try {
+    toast('Creating token on-chain…');
+    const contract = new ethers.Contract(MINT_CONTRACT, MINT_ABI, walletSigner);
+
+    // Encode SVG as bytes array (VV Mint expects bytes[])
+    const svgBytes = ethers.toUtf8Bytes(p.optimizedSvg);
+
+    const tx = await contract.create(
+      `DEWD #${paddedId}`,
+      `Hand-drawn DEWD #${paddedId} by Derrick Kempf`,
+      [svgBytes],  // bytes[] array
+      0,           // default renderer
+      0            // no extra data
+    );
+
+    toast('Transaction sent — waiting for confirmation…');
+    const receipt = await tx.wait();
+
+    // Extract token ID from TransferSingle event
+    let tokenId = null;
+    for (const log of receipt.logs) {
+      try {
+        const parsed = contract.interface.parseLog(log);
+        if (parsed && parsed.name === 'TransferSingle') {
+          tokenId = Number(parsed.args.id);
+          break;
+        }
+      } catch { /* skip */ }
+    }
+
+    p.mintStatus = 'waiting';
+    if (tokenId !== null) p.tokenId = tokenId;
+    save(); doFilter();
+    if (curM === id) renderMBody(id);
+    toast(`Token created! 24h mint window open for #${paddedId}`, true);
+  } catch (err) {
+    const msg = err.reason || err.message || 'Transaction failed';
+    if (msg.includes('owner') || msg.includes('Ownable') || msg.includes('caller is not')) {
+      toast('Only the contract owner can create tokens');
+    } else {
+      toast('Create failed: ' + msg.slice(0, 100));
+    }
+    console.error('Create error:', err);
+  }
+}
+
+// ── Public: mint (collect) a token during the 24h window ──
+async function mintPunk(id) {
+  const p = punks[id];
+  if (!p.tokenId && p.tokenId !== 0) { toast('No on-chain token for this DEWD yet'); return; }
+  if (!walletSigner) { const s = await connectWallet(); if (!s) return; }
+
+  const paddedId = String(id).padStart(4, '0');
+  try {
+    toast('Preparing mint…');
+    const contract = new ethers.Contract(MINT_CONTRACT, MINT_ABI, walletSigner);
+
+    // Check if mint window is still open
+    const closeAt = await contract.mintOpenUntil(p.tokenId);
+    const now = Math.floor(Date.now() / 1000);
+    if (Number(closeAt) < now) {
+      toast('Mint window has closed for this DEWD');
+      p.mintStatus = 'minted';
+      save(); if (curM === id) renderMBody(id);
+      return;
+    }
+
+    // VV Mint price = block.basefee * 60,000 per token
+    // Estimate with a buffer since basefee can change between blocks
+    const feeData = await walletProvider.getFeeData();
+    const baseFee = feeData.gasPrice || feeData.maxFeePerGas || 30000000000n;
+    const mintPrice = baseFee * 60000n;
+    const mintPriceWithBuffer = mintPrice * 120n / 100n; // 20% buffer
+
+    const priceEth = ethers.formatEther(mintPrice);
+    toast(`Minting for ~${Number(priceEth).toFixed(6)} ETH…`);
+
+    const tx = await contract.mint(p.tokenId, 1, { value: mintPriceWithBuffer });
+    toast('Transaction sent — waiting for confirmation…');
+    await tx.wait();
+
+    p.mintStatus = 'minted';
+    save(); doFilter();
+    if (curM === id) renderMBody(id);
+    toast(`DEWD #${paddedId} collected!`, true);
+  } catch (err) {
+    const msg = err.reason || err.message || 'Transaction failed';
+    if (msg.includes('MintClosed')) {
+      toast('Mint window has closed for this DEWD');
+      p.mintStatus = 'minted'; save();
+    } else if (msg.includes('MintPriceNotMet')) {
+      toast('Price changed — try again (gas fluctuation)');
+    } else {
+      toast('Mint failed: ' + msg.slice(0, 100));
+    }
+    console.error('Mint error:', err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// UI TOGGLES
+// ═══════════════════════════════════════════════════════
+function toggleStats() {
+  const bar = document.getElementById('stats-bar');
+  const opening = !bar.classList.contains('open');
+  bar.classList.toggle('open');
+  if (opening) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Show nav on scroll up, hide on scroll down
+let _lastScrollY = 0;
+let _navEl = null;
+window.addEventListener('scroll', () => {
+  if (!_navEl) _navEl = document.querySelector('nav');
+  const y = window.scrollY;
+  if (y > _lastScrollY && y > 80) {
+    _navEl.classList.add('nav-hidden');
+  } else {
+    _navEl.classList.remove('nav-hidden');
+  }
+  _lastScrollY = y;
+}, { passive: true });
+function toggleFilterDrawer() {
+  const drawer = document.getElementById('filter-drawer');
+  const btn    = document.getElementById('filter-toggle-btn');
+  const isOpen = drawer.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+}
+
+
+// ═══════════════════════════════════════════════════════
+// ADMIN AUTH
+// ═══════════════════════════════════════════════════════
+async function sha256(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2,'0')).join('');
+}
+
+function adminClick() {
+  if (adminOn) { exitAdmin(); return; }
+  if (sessionStorage.getItem('pd-ok') === '1') { unlockAdmin(); return; }
+  document.getElementById('admin-auth-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('admin-pw').focus(), 200);
+}
+
+async function chkAdminAuth() {
+  const pw = document.getElementById('admin-pw').value;
+  const h  = await sha256(pw);
+  if (h === HASH) {
+    sessionStorage.setItem('pd-ok', '1');
+    // Create the server-side admin cookie — MUST succeed for daily/feed to work.
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      });
+      if (!res.ok) console.warn('Admin cookie not set:', res.status);
+    } catch (err) {
+      console.warn('Admin cookie request failed:', err);
+    }
+    document.getElementById('admin-auth-overlay').classList.remove('open');
+    document.getElementById('admin-pw').value = '';
+    document.getElementById('admin-auth-error').style.display = 'none';
+    unlockAdmin();
+  } else {
+    document.getElementById('admin-auth-error').style.display = 'block';
+    document.getElementById('admin-pw').select();
+  }
+}
+function closeAdminAuth() {
+  document.getElementById('admin-auth-overlay').classList.remove('open');
+  document.getElementById('admin-pw').value = '';
+  document.getElementById('admin-auth-error').style.display = 'none';
+}
+function unlockAdmin() {
+  adminOn = true;
+  document.getElementById('admin-panel').classList.add('open');
+  document.getElementById('dp-new-post').style.display = '';
+  render();
+}
+function exitAdmin() {
+  adminOn = false;
+  sessionStorage.removeItem('pd-ok');
+  // Also clear the server-side admin cookie so /daily and /feed re-lock.
+  fetch('/api/admin/login', { method: 'DELETE', credentials: 'include' }).catch(() => {});
+  document.getElementById('admin-panel').classList.remove('open');
+  document.getElementById('dp-new-post').style.display = 'none';
+  document.getElementById('dp-composer').classList.remove('open');
+  render();
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function toast(m, ok=false) {
+  const t = document.getElementById('toast');
+  t.textContent = m;
+  t.className = 'show' + (ok ? ' ok' : '');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.className = '', 2600);
+}
+
+// ═══════════════════════════════════════════════════════
+// KEYBOARD
+// ═══════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (dpOpen) { toggleDaily(); return; }
+    closeM(); closeEmailAuth(); closeAdminAuth(); closeAbout();
+  }
+  if (e.key === 'Enter' && document.getElementById('admin-auth-overlay').classList.contains('open')) chkAdminAuth();
+  // Arrow keys: daily panel takes priority when open
+  if (dpOpen && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    if (e.key === 'ArrowLeft') dpShift(-1);
+    if (e.key === 'ArrowRight') dpShift(1);
+    return;
+  }
+  if (curM !== null) {
+    if (e.key === 'ArrowRight') navM(1);
+    if (e.key === 'ArrowLeft')  navM(-1);
+  }
+  if (e.ctrlKey && e.shiftKey && e.key === 'A') adminClick();
+});
+
+// ═══════════════════════════════════════════════════════
+// DAILY + FEED PANEL
+// ═══════════════════════════════════════════════════════
+const DP_ACTIVITIES = [
+  { key: 'drawing',  label: 'Draw 100 dewds',  target: 100 },
+  { key: 'pushups',  label: '100 pushups',     target: 100 },
+  { key: 'crunches', label: '100 crunches',    target: 100 },
+];
+let dpDate = dpTodayISO();
+let dpDay  = { drawing: { done:false, count:0 }, pushups: { done:false, count:0 }, crunches: { done:false, count:0 } };
+let dpOpen = false;
+let dpFeedPosts = [];
+
+function dpTodayISO() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+function dpShiftDate(iso, days) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+function dpFormatDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
+}
+function dpFormatTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+    ' @ ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+}
+
+function toggleDaily() {
+  dpOpen = !dpOpen;
+  document.getElementById('daily-panel').classList.toggle('open', dpOpen);
+  document.body.classList.toggle('daily-open', dpOpen);
+  document.getElementById('nav-daily-btn').classList.toggle('active', dpOpen);
+  if (dpOpen) {
+    dpDate = dpTodayISO();
+    dpLoadDay();
+    dpLoadFeed();
+    // Show "New Post" if admin
+    document.getElementById('dp-new-post').style.display = adminOn ? '' : 'none';
+  }
+}
+
+async function dpLoadDay() {
+  const isToday  = dpDate === dpTodayISO();
+  const isFuture = dpDate > dpTodayISO();
+  document.getElementById('dp-eyebrow').textContent = isToday ? 'TODAY' : isFuture ? 'FUTURE' : 'PAST';
+  document.getElementById('dp-date').textContent = dpFormatDate(dpDate);
+  document.getElementById('dp-next').disabled = isToday;
+
+  try {
+    const r = await fetch(`/api/daily?date=${dpDate}`, { cache: 'no-store', credentials: 'include' });
+    const j = await r.json();
+    dpDay = j.day || { drawing:{done:false,count:0}, pushups:{done:false,count:0}, crunches:{done:false,count:0} };
+  } catch {
+    dpDay = { drawing:{done:false,count:0}, pushups:{done:false,count:0}, crunches:{done:false,count:0} };
+  }
+  dpRenderTasks();
+}
+
+const SVG_BOX_CHECKED = `<svg viewBox="0 0 18 18" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17.96,3.75c-.05-.56-.14-1.08-.39-1.57-.38-.75-1-1.36-1.75-1.75-.48-.25-1-.35-1.56-.39-.55-.05-1.23-.05-2.05-.05h-6.4c-.82,0-1.5,0-2.05.05-.56.05-1.08.14-1.56.39-.75.38-1.36,1-1.75,1.75-.25.49-.35,1-.39,1.57-.04.55-.04,1.23-.04,2.05v6.4c0,.82,0,1.5.04,2.05.05.56.15,1.08.39,1.56.38.75,1,1.36,1.75,1.75.49.25,1,.35,1.56.39.55.05,1.23.04,2.05.04h6.4c.82,0,1.5,0,2.05-.04.56-.05,1.08-.14,1.56-.39.75-.38,1.36-1,1.75-1.75.25-.49.35-1,.39-1.56.04-.55.04-1.23.04-2.05v-6.4c0-.82,0-1.5-.04-2.05ZM15.96,14.09c-.04.44-.1.66-.18.82-.19.38-.5.68-.87.87-.16.08-.38.15-.82.18-.45.04-1.03.04-1.89.04h-6.4c-.86,0-1.44,0-1.89-.04-.44-.04-.66-.1-.82-.18-.38-.19-.68-.5-.87-.87-.08-.16-.14-.38-.18-.82-.04-.45-.04-1.03-.04-1.89v-6.4c0-.86,0-1.44.04-1.89.04-.44.1-.66.18-.82.19-.38.5-.68.87-.87.16-.08.38-.14.82-.18.45-.04,1.03-.04,1.89-.04h6.4c.86,0,1.44,0,1.89.04.44.04.66.1.82.18.38.19.68.5.87.87.08.16.15.38.18.82.04.45.04,1.03.04,1.89v6.4c0,.86,0,1.44-.04,1.89Z"/><path d="M11.79,6.04l-3.79,3.79-1.29-1.29c-.39-.39-1.02-.39-1.41,0-.39.39-.39,1.02,0,1.41l2,2c.19.19.44.29.71.29s.52-.1.71-.29l4.5-4.5c.39-.39.39-1.02,0-1.41-.39-.39-1.02-.39-1.41,0Z"/></svg>`;
+const SVG_BOX_EMPTY = `<svg viewBox="0 0 18 18" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.2,18h-6.4c-1.84,0-2.76,0-3.62-.43-.76-.39-1.36-.99-1.75-1.75-.44-.86-.44-1.78-.44-3.62v-6.4c0-1.84,0-2.76.44-3.62.39-.76.99-1.36,1.75-1.75.86-.44,1.78-.44,3.62-.44h6.4c1.84,0,2.76,0,3.62.44.76.39,1.36.99,1.75,1.75.44.86.44,1.78.44,3.62v6.4c0,1.84,0,2.76-.44,3.62-.39.76-.99,1.36-1.75,1.75-.86.44-1.78.44-3.62.44ZM5.8,2c-1.47,0-2.28,0-2.71.22-.38.19-.68.49-.87.87-.22.43-.22,1.24-.22,2.71v6.4c0,1.47,0,2.28.22,2.71.19.38.5.68.87.88.43.22,1.24.22,2.71.22h6.4c1.47,0,2.28,0,2.71-.22.38-.19.68-.5.87-.87.22-.43.22-1.24.22-2.71v-6.4c0-1.47,0-2.28-.22-2.71-.19-.38-.5-.68-.87-.87-.43-.22-1.24-.22-2.71-.22h-6.4Z"/></svg>`;
+
+function dpRenderTasks() {
+  const el = document.getElementById('dp-tasks');
+  el.innerHTML = DP_ACTIVITIES.map((a, i) => {
+    const v = dpDay[a.key] || { done: false, count: 0 };
+    return `<li class="dp-task ${v.done ? 'done' : ''}">
+      <span class="dp-task-num">${i+1}.</span>
+      <button class="dp-check ${v.done ? 'on' : ''}" onclick="dpToggle('${a.key}')">${v.done ? SVG_BOX_CHECKED : SVG_BOX_EMPTY}</button>
+      <span class="dp-task-label">${a.label}</span>
+    </li>`;
+  }).join('');
+}
+
+// Re-establish the server admin cookie using the cached sessionStorage flag
+async function dpEnsureCookie() {
+  // If we're admin locally but the cookie might be missing, re-login.
+  // The admin password isn't stored, so we use the /api/admin/login endpoint
+  // which was already called during chkAdminAuth. If the cookie expired
+  // mid-session we can't recover without the password — the user must re-auth.
+  try {
+    const r = await fetch('/api/admin/session', { cache: 'no-store', credentials: 'include' });
+    const j = await r.json();
+    return !!j.isAdmin;
+  } catch { return false; }
+}
+
+async function dpToggle(key) {
+  if (!adminOn) { toast('Admin access required'); return; }
+  const cur = dpDay[key] || { done: false, count: 0 };
+  dpDay[key] = { done: !cur.done, count: !cur.done && cur.count === 0 ? 100 : cur.count };
+  dpRenderTasks();
+  try {
+    const r = await fetch('/api/daily', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: dpDate, day: dpDay }),
+    });
+    if (r.status === 401) {
+      toast('Session expired — use Ctrl+Shift+A to re-login');
+      dpLoadDay(); return;
+    }
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      toast(j.error || 'Save failed');
+      dpLoadDay(); return;
+    }
+    toast('Saved', true);
+  } catch (err) {
+    toast('Network error — check connection');
+    dpLoadDay();
+  }
+}
+
+function dpShift(dir) {
+  if (dir === 1 && dpDate === dpTodayISO()) return;
+  dpDate = dpShiftDate(dpDate, dir);
+  dpLoadDay();
+}
+
+async function dpLoadFeed() {
+  try {
+    const r = await fetch('/api/feed', { cache: 'no-store', credentials: 'include' });
+    const j = await r.json();
+    dpFeedPosts = j.posts || [];
+  } catch {
+    dpFeedPosts = [];
+  }
+  dpRenderFeed();
+}
+
+function dpRenderFeed() {
+  const el = document.getElementById('dp-posts');
+  if (!dpFeedPosts.length) {
+    el.innerHTML = '<div class="dp-empty">Nothing here yet.</div>';
+    return;
+  }
+  el.innerHTML = dpFeedPosts.map(p => {
+    let media = '';
+    if (p.mediaUrl && p.kind === 'video') {
+      media = `<video class="dp-post-media" src="${esc(p.mediaUrl)}" controls preload="metadata"></video>`;
+    } else if (p.mediaUrl) {
+      media = `<img class="dp-post-media" src="${esc(p.mediaUrl)}" alt="${esc(p.title || 'post')}" loading="lazy">`;
+    }
+    const title = p.title ? `<div style="font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);color:var(--color-muted);margin-bottom:4px">${esc(p.title)}</div>` : '';
+    const body  = p.body  ? `<div class="dp-post-body">${esc(p.body)}</div>` : '';
+    return `<div class="dp-post">
+      ${title}${body}${media}
+      <div class="dp-post-time">${dpFormatTime(p.createdAt)}</div>
+    </div>`;
+  }).join('');
+}
+
+function dpToggleComposer() {
+  const c = document.getElementById('dp-composer');
+  c.classList.toggle('open');
+  if (!c.classList.contains('open')) {
+    document.getElementById('dp-post-body').value = '';
+    document.getElementById('dp-post-file').value = '';
+  }
+}
+
+async function dpSubmitPost() {
+  if (!adminOn) return;
+  const kind = document.getElementById('dp-post-kind').value;
+  const body = document.getElementById('dp-post-body').value.trim();
+  const file = document.getElementById('dp-post-file').files[0];
+  if (!body && !file) { toast('Add text or media'); return; }
+
+  const btn = document.getElementById('dp-post-submit');
+  btn.textContent = 'Posting…'; btn.disabled = true;
+
+  try {
+    let mediaUrl = null;
+    if (file) {
+      const fd = new FormData();
+      fd.append('file', file);
+      const up = await fetch('/api/feed/upload', { method: 'POST', credentials: 'include', body: fd });
+      if (up.status === 401) throw new Error('Session expired — re-login');
+      if (!up.ok) { const j = await up.json().catch(()=>({})); throw new Error(j.error || 'Upload failed'); }
+      const j = await up.json();
+      mediaUrl = j.url;
+    }
+    const r = await fetch('/api/feed', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, title: '', body, mediaUrl }),
+    });
+    if (r.status === 401) throw new Error('Session expired — re-login');
+    if (!r.ok) { const j = await r.json().catch(()=>({})); throw new Error(j.error || 'Post failed'); }
+    toast('Posted', true);
+    dpToggleComposer();
+    dpLoadFeed();
+  } catch (err) {
+    toast(err.message || 'Failed');
+  } finally {
+    btn.textContent = 'Post'; btn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// GRID CROPPER — batch crop 12×9 sheet into 48 squares
+// ═══════════════════════════════════════════════════════
+let gcImage = null;    // loaded Image element
+let gcTiles = [];      // array of { blob, filename, dataUrl }
+
+function gcLoadFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      gcImage = img;
+      document.getElementById('gc-preview').style.display = 'block';
+      document.getElementById('gc-preview-img').src = e.target.result;
+      document.getElementById('gc-crop-btn').disabled = false;
+      document.getElementById('gc-zip-btn').disabled = true;
+      document.getElementById('gc-upload-btn').disabled = true;
+      document.getElementById('gc-thumbs').innerHTML = '';
+      document.getElementById('gc-select-bar').style.display = 'none';
+      gcTiles = [];
+      gcDrawOverlay();
+      gcSetStatus(`Loaded: ${img.naturalWidth}×${img.naturalHeight}px — click "Crop & Preview"`);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function gcDrawOverlay() {
+  const cols = parseInt(document.getElementById('gc-cols').value) || 8;
+  const rows = parseInt(document.getElementById('gc-rows').value) || 6;
+  const el = document.getElementById('gc-overlay');
+  let lines = '';
+  // Vertical lines
+  for (let c = 1; c < cols; c++) {
+    const x = (c / cols * 100).toFixed(4);
+    lines += `<line x1="${x}%" y1="0" x2="${x}%" y2="100%" stroke="rgba(0,153,255,.6)" stroke-width="1"/>`;
+  }
+  // Horizontal lines
+  for (let r = 1; r < rows; r++) {
+    const y = (r / rows * 100).toFixed(4);
+    lines += `<line x1="0" y1="${y}%" x2="100%" y2="${y}%" stroke="rgba(0,153,255,.6)" stroke-width="1"/>`;
+  }
+  el.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${lines}</svg>`;
+}
+
+async function gcCrop() {
+  if (!gcImage) return;
+  const cols = parseInt(document.getElementById('gc-cols').value) || 8;
+  const rows = parseInt(document.getElementById('gc-rows').value) || 6;
+  const startNum = parseInt(document.getElementById('gc-start').value) || 0;
+  const total = cols * rows;
+
+  const tileW = Math.floor(gcImage.naturalWidth / cols);
+  const tileH = Math.floor(gcImage.naturalHeight / rows);
+
+  gcSetStatus(`Cropping ${total} tiles (${tileW}×${tileH}px each)…`);
+  gcTiles = [];
+
+  const canvas = document.getElementById('gc-canvas');
+  canvas.width = tileW;
+  canvas.height = tileH;
+  const ctx = canvas.getContext('2d');
+
+  const thumbsEl = document.getElementById('gc-thumbs');
+  thumbsEl.innerHTML = '';
+  // Update grid columns to match
+  thumbsEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const idx = r * cols + c;
+      const num = startNum + idx;
+      const filename = String(num).padStart(4, '0') + '.png';
+
+      ctx.clearRect(0, 0, tileW, tileH);
+      ctx.drawImage(gcImage, c * tileW, r * tileH, tileW, tileH, 0, 0, tileW, tileH);
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const blob = await (await fetch(dataUrl)).blob();
+
+      gcTiles.push({ blob, filename, dataUrl });
+
+      // Build thumbnail with selection
+      const thumb = document.createElement('div');
+      thumb.className = 'gc-thumb selected';
+      thumb.dataset.idx = idx;
+      thumb.onclick = () => gcToggleThumb(thumb);
+      thumb.innerHTML = `<img src="${dataUrl}" alt="${filename}">`
+        + `<svg class="gc-thumb-check" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"/><path d="M6 10l3 3 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+        + `<div class="gc-thumb-label">${filename}</div>`;
+      thumbsEl.appendChild(thumb);
+    }
+    // Yield to UI every row
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  document.getElementById('gc-zip-btn').disabled = false;
+  document.getElementById('gc-upload-btn').disabled = false;
+  document.getElementById('gc-select-bar').style.display = 'flex';
+  gcUpdateSelectCount();
+}
+
+async function gcDownloadZip() {
+  if (!gcTiles.length) return;
+  const selected = gcGetSelected();
+  if (!selected.length) { gcSetStatus('No tiles selected.'); return; }
+  gcSetStatus(`Building ZIP (${selected.length} tiles)…`);
+  const zip = new JSZip();
+  for (const tile of selected) {
+    zip.file(tile.filename, tile.blob);
+  }
+  const content = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(content);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `punk-dewds-batch-${document.getElementById('gc-start').value}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  gcSetStatus(`ZIP downloaded (${selected.length} tiles).`);
+}
+
+async function gcUploadAll() {
+  if (!gcTiles.length || !adminOn) return;
+  const selected = gcGetSelected();
+  if (!selected.length) { gcSetStatus('No tiles selected.'); return; }
+  const btn = document.getElementById('gc-upload-btn');
+  btn.disabled = true;
+  btn.textContent = 'Uploading…';
+  let ok = 0, fail = 0;
+
+  for (const tile of selected) {
+    try {
+      const punkId = parseInt(tile.filename.replace('.png', ''), 10);
+      gcSetStatus(`Uploading ${tile.filename}… (${ok + fail + 1}/${selected.length})`);
+      const fd = new FormData();
+      fd.append('file', new File([tile.blob], tile.filename, { type: 'image/png' }));
+      const r = await fetch('/api/feed/upload', { method: 'POST', credentials: 'include', body: fd });
+      if (r.ok) {
+        const data = await r.json();
+        // Assign the uploaded image URL to the matching punk
+        if (punks[punkId]) {
+          punks[punkId].art = data.url;
+          punks[punkId].status = 'done';
+        }
+        ok++;
+      } else fail++;
+    } catch {
+      fail++;
+    }
+  }
+
+  if (ok > 0) { save(); doStats(); doFilter(); }
+  btn.textContent = 'Upload Selected to App';
+  btn.disabled = false;
+  gcSetStatus(`Done — ${ok} uploaded, ${fail} failed.`);
+  if (ok > 0) toast(`${ok} tiles uploaded & linked to DEWDs`, true);
+}
+
+function gcSetStatus(msg) {
+  const el = document.getElementById('gc-status');
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+
+function gcToggleThumb(el) {
+  el.classList.toggle('selected');
+  gcUpdateSelectCount();
+}
+
+function gcSelectAll() {
+  document.querySelectorAll('.gc-thumb').forEach(t => t.classList.add('selected'));
+  gcUpdateSelectCount();
+}
+
+function gcSelectNone() {
+  document.querySelectorAll('.gc-thumb').forEach(t => t.classList.remove('selected'));
+  gcUpdateSelectCount();
+}
+
+function gcUpdateSelectCount() {
+  const total = document.querySelectorAll('.gc-thumb').length;
+  const sel = document.querySelectorAll('.gc-thumb.selected').length;
+  document.getElementById('gc-select-count').textContent = `${sel} of ${total} selected`;
+  gcSetStatus(`${sel} of ${total} tiles selected — download ZIP or upload to app.`);
+}
+
+function gcGetSelected() {
+  const selectedEls = document.querySelectorAll('.gc-thumb.selected');
+  const indices = new Set([...selectedEls].map(el => parseInt(el.dataset.idx)));
+  return gcTiles.filter((_, i) => indices.has(i));
+}
+
+// Re-draw overlay when cols/rows change
+document.getElementById('gc-cols').addEventListener('change', gcDrawOverlay);
+document.getElementById('gc-rows').addEventListener('change', gcDrawOverlay);
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+loadPunks();
+doStats();
+doFilter();
+// Load server punk data (overrides localStorage with latest server state)
+loadPunksFromServer();
+
+// Sync session with server on load
+(async () => {
+  try {
+    const res = await fetch('/api/auth/session', { credentials: 'include' });
+    const data = await res.json();
+    if (data.user) {
+      currentUser = { email: data.user.email, since: Date.now() };
+      localStorage.setItem('pd-user', JSON.stringify(currentUser));
+    } else if (currentUser) {
+      // Server has no session but localStorage does — clear it
+      currentUser = null;
+      localStorage.removeItem('pd-user');
+    }
+  } catch {} // offline or API not available, use localStorage fallback
+})();
+
+// Long-press on ? button → admin login (mobile-friendly)
+(() => {
+  const btn = document.getElementById('about-btn');
+  let lpTimer = null;
+  const start = (e) => { lpTimer = setTimeout(() => { e.preventDefault(); adminClick(); }, 800); };
+  const cancel = () => { clearTimeout(lpTimer); };
+  btn.addEventListener('touchstart', start, { passive: false });
+  btn.addEventListener('touchend', cancel);
+  btn.addEventListener('touchmove', cancel);
+  btn.addEventListener('mousedown', start);
+  btn.addEventListener('mouseup', cancel);
+  btn.addEventListener('mouseleave', cancel);
+})();
+
+// URL param handlers
+const urlParams = new URLSearchParams(location.search);
+if (urlParams.has('admin')) {
+  history.replaceState(null, '', location.pathname);
+  adminClick();
+}
+if (urlParams.has('punk')) {
+  const punkId = parseInt(urlParams.get('punk'));
+  history.replaceState(null, '', location.pathname);
+  if (!isNaN(punkId) && punkId >= 0 && punkId < TOTAL) {
+    setTimeout(() => openM(punkId), 300);
+  }
+}
+</script>
+</body>
+</html>
